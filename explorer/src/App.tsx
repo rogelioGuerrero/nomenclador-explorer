@@ -5,38 +5,23 @@ import {
   BrainCircuit,
   Database,
   FileSearch,
-  GitBranchPlus,
   GitMerge,
   Network,
   Radar,
   Route,
-  Scale,
   Search,
-  Settings2,
-  ShieldCheck,
   type LucideIcon,
 } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 
-const DecisionWorkspace = lazy(() => import('./workspaces/DecisionWorkspace/DecisionWorkspace').then((module) => ({ default: module.DecisionWorkspace })));
-const DiffMergeWorkspace = lazy(() => import('./workspaces/DiffMergeWorkspace/DiffMergeWorkspace').then((module) => ({ default: module.DiffMergeWorkspace })));
 const GraphWorkspace = lazy(() => import('./workspaces/GraphWorkspace/GraphWorkspace').then((module) => ({ default: module.GraphWorkspace })));
-const ImportExportWorkspace = lazy(() => import('./workspaces/ImportExportWorkspace/ImportExportWorkspace').then((module) => ({ default: module.ImportExportWorkspace })));
-const LineageDiagram = lazy(() => import('./workspaces/LineageWorkspace/LineageDiagram').then((module) => ({ default: module.LineageDiagram })));
 const ReasoningWorkspace = lazy(() => import('./workspaces/ReasoningWorkspace').then((module) => ({ default: module.ReasoningWorkspace })));
 const SparqlWorkspace = lazy(() => import('./workspaces/SparqlWorkspace/SparqlWorkspace').then((module) => ({ default: module.SparqlWorkspace })));
 const VocabularyWorkspace = lazy(() => import('./workspaces/VocabularyWorkspace/VocabularyWorkspace').then((module) => ({ default: module.VocabularyWorkspace })));
-const RegistryTab = lazy(() => import('./workspaces/EnrichWorkspace/RegistryTab').then((module) => ({ default: module.RegistryTab })));
-const EntityResolutionTab = lazy(() => import('./workspaces/EnrichWorkspace/EntityResolutionTab').then((module) => ({ default: module.EntityResolutionTab })));
-const KGOverviewTab = lazy(() => import('./workspaces/ManageWorkspace/KGOverviewTab').then((module) => ({ default: module.KGOverviewTab })));
-const OntologySummaryTab = lazy(() => import('./workspaces/ManageWorkspace/OntologySummaryTab').then((module) => ({ default: module.OntologySummaryTab })));
-const OntologyWorkspace = lazy(() => import('./workspaces/OntologyWorkspace').then((module) => ({ default: module.OntologyWorkspace })));
 
-type WorkspaceId = 'welcome' | 'explore' | 'analyze' | 'decisions' | 'enrich' | 'manage' | 'ontology-hub';
+type WorkspaceId = 'welcome' | 'explore' | 'analyze';
 type ExploreView = 'graph' | 'vocabulary';
 type AnalyzeView = 'sparql' | 'reasoning';
-type EnrichView = 'import' | 'merge' | 'registry' | 'resolve';
-type ManageView = 'lineage' | 'kg-overview' | 'ontology';
 
 type NavItem = {
   id: WorkspaceId;
@@ -77,12 +62,8 @@ const PREVIEW_DOTS = Array.from({ length: 42 }, (_, i) => ({
 }));
 
 const navItems: NavItem[] = [
-  { id: 'explore', label: 'Knowledge Explorer', hint: 'Graph and vocabulary browsing', icon: Database },
-  { id: 'analyze', label: 'Analyze', hint: 'Query and inspect the dataset', icon: FileSearch },
-  { id: 'decisions', label: 'Decisions', hint: 'Decision chains and precedent review', icon: Scale },
-  { id: 'enrich', label: 'Enrich', hint: 'Import, export, and merge workflows', icon: GitBranchPlus },
-  { id: 'manage', label: 'Manage', hint: 'Lineage and governance tooling', icon: Settings2 },
-  { id: 'ontology-hub', label: 'Ontology Hub', hint: 'Schema governance, registry, and vocabulary management', icon: GitMerge },
+  { id: 'explore', label: 'Nomenclador', hint: 'Grafo y vocabulario', icon: Database },
+  { id: 'analyze', label: 'Analizar', hint: 'Consultas e inferencia', icon: FileSearch },
 ];
 
 const shellStyles = `
@@ -1483,16 +1464,10 @@ function WelcomeScreen({
   onOpenNetwork,
   onOpenVocabulary,
   onOpenReasoning,
-  onOpenImport,
-  onOpenDecisions,
-  onOpenManage,
 }: {
   onOpenNetwork: () => void;
   onOpenVocabulary: () => void;
   onOpenReasoning: () => void;
-  onOpenImport: () => void;
-  onOpenDecisions: () => void;
-  onOpenManage: () => void;
 }) {
   const [stats, setStats] = useState<{ nodes: number | null; edges: number | null; ready: boolean }>({
     nodes: null,
@@ -1536,34 +1511,16 @@ function WelcomeScreen({
 
   const secondaryLaunchers: LandingAction[] = [
     {
-      label: 'Vocabulary',
-      description: 'Schemes and terms',
+      label: 'Vocabulario',
+      description: 'Esquemas y términos',
       icon: Database,
       onClick: onOpenVocabulary,
     },
     {
-      label: 'Analyze',
-      description: 'Inference and queries',
+      label: 'Analizar',
+      description: 'Inferencia y consultas',
       icon: BrainCircuit,
       onClick: onOpenReasoning,
-    },
-    {
-      label: 'Decisions',
-      description: 'Chains and precedents',
-      icon: Scale,
-      onClick: onOpenDecisions,
-    },
-    {
-      label: 'Enrich',
-      description: 'Import and resolve',
-      icon: GitBranchPlus,
-      onClick: onOpenImport,
-    },
-    {
-      label: 'Manage',
-      description: 'Lineage and ontology',
-      icon: ShieldCheck,
-      onClick: onOpenManage,
     },
   ];
 
@@ -1578,33 +1535,32 @@ function WelcomeScreen({
               <div className="landing-status-dot" />
               <span className="landing-status-text">System Online</span>
               <div className="landing-status-divider" />
-              <span className="landing-status-version">Semantica v2 · Semantic Intelligence</span>
+              <span className="landing-status-version">Nomenclador Explorer · Accesibilidad Territorial</span>
             </div>
 
             <div className="landing-kicker" aria-label="Product category">
               <span className="landing-kicker-mark" aria-hidden="true" />
-              Knowledge Explorer
+              Nomenclador Explorer
             </div>
 
             <h1 className="landing-title">
-              Navigate knowledge<br />
-              like a <span>living system.</span>
+              Explora el nomenclador<br />
+              como un <span>sistema vivo.</span>
             </h1>
             <p className="landing-subtitle">
-              Semantica turns dense knowledge graphs into a navigable command center —
-              discovery, reasoning, provenance, distance intelligence, and decision context,
-              all in one interface.
+              Visualiza variables, fuentes, clasificadores y normativas del nomenclador
+              en un grafo interactivo con búsqueda, caminos y análisis de cercanía.
             </p>
 
             <div className="landing-cta-row">
               <button className="landing-cta-primary" type="button" onClick={onOpenNetwork}>
                 <Network size={16} />
-                Open Semantica Explorer
+                Abrir Nomenclador Explorer
                 <ArrowRight size={15} />
               </button>
               <button className="landing-cta-secondary" type="button" onClick={onOpenReasoning}>
                 <BrainCircuit size={15} />
-                Run Reasoning
+                Inferencia
               </button>
             </div>
           </div>
@@ -1615,7 +1571,7 @@ function WelcomeScreen({
               <div className="landing-preview-dot" />
               <div className="landing-preview-dot" />
               <div className="landing-preview-dot" />
-              <div className="landing-preview-tab">Semantica Explorer</div>
+              <div className="landing-preview-tab">Nomenclador Explorer</div>
             </div>
             <div className="landing-command-card">
               <div className="landing-command-icon">
@@ -1664,7 +1620,7 @@ function WelcomeScreen({
             </div>
             <div className="landing-dossier-card">
               <div className="landing-dossier-kicker">Entity Dossier</div>
-              <div className="landing-dossier-title">NSRP1</div>
+              <div className="landing-dossier-title">Variable</div>
               <div className="landing-dossier-row"><span>Distance band</span><strong>Near</strong></div>
               <div className="landing-dossier-row"><span>Path coherence</span><strong>0.84</strong></div>
               <div className="landing-dossier-row"><span>Provenance</span><strong>Audited</strong></div>
@@ -1702,10 +1658,10 @@ function WelcomeScreen({
           <div className="landing-workspace-grid">
             <button className="landing-workspace-card landing-workspace-card--primary" type="button" onClick={onOpenNetwork}>
               <div>
-                <div className="landing-workspace-card-eyebrow">Primary Workspace</div>
-                <div className="landing-workspace-card-title">Semantica Explorer</div>
+                <div className="landing-workspace-card-eyebrow">Workspace Principal</div>
+                <div className="landing-workspace-card-title">Nomenclador Explorer</div>
                 <div className="landing-workspace-card-desc">
-                  Full graph, grouped communities, focused neighborhoods, and distance intelligence — all in one canvas.
+                  Grafo completo, comunidades agrupadas, vecindarios enfocados y análisis de cercanía — todo en un canvas.
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1735,12 +1691,12 @@ function WelcomeScreen({
 
         {/* ── Capability band ── */}
         <section className="landing-capability-band" aria-label="Intelligence capabilities">
-          <div className="landing-capability-label">Intelligence Layer</div>
-          <div className="landing-capability"><Radar size={12} />Distance Heatmap</div>
-          <div className="landing-capability"><Network size={12} />Focused Neighborhood</div>
-          <div className="landing-capability"><GitMerge size={12} />Grouped Communities</div>
-          <div className="landing-capability"><Route size={12} />Trace Causal Path</div>
-          <div className="landing-capability"><ShieldCheck size={12} />Provenance Dossier</div>
+          <div className="landing-capability-label">Capacidades</div>
+          <div className="landing-capability"><Radar size={12} />Mapa de cercanía</div>
+          <div className="landing-capability"><Network size={12} />Vecindario enfocado</div>
+          <div className="landing-capability"><GitMerge size={12} />Comunidades agrupadas</div>
+          <div className="landing-capability"><Route size={12} />Trazar caminos</div>
+          <div className="landing-capability"><Search size={12} />Búsqueda indexada</div>
         </section>
 
       </div>
@@ -1752,9 +1708,6 @@ export default function App() {
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>('welcome');
   const [exploreView, setExploreView] = useState<ExploreView>('graph');
   const [analyzeView, setAnalyzeView] = useState<AnalyzeView>('reasoning');
-  const [enrichView, setEnrichView] = useState<EnrichView>('import');
-  const [manageView, setManageView] = useState<ManageView>('lineage');
-  const [graphFocusRequest, setGraphFocusRequest] = useState<{ nodeId: string; token: number } | null>(null);
 
 
   const renderWorkspace = () => {
@@ -1773,12 +1726,6 @@ export default function App() {
             setActiveWorkspace('analyze');
             setAnalyzeView('reasoning');
           }}
-          onOpenImport={() => {
-            setActiveWorkspace('enrich');
-            setEnrichView('import');
-          }}
-          onOpenDecisions={() => setActiveWorkspace('decisions')}
-          onOpenManage={() => setActiveWorkspace('manage')}
         />
       );
     }
@@ -1793,7 +1740,7 @@ export default function App() {
           tabs={
             <>
               <button className="workspace-tab" data-active={exploreView === 'graph'} onClick={() => setExploreView('graph')}>
-                Semantica Explorer
+                Nomenclador Explorer
               </button>
               <button className="workspace-tab" data-active={exploreView === 'vocabulary'} onClick={() => setExploreView('vocabulary')}>
                 Vocabulary Browser
@@ -1804,10 +1751,7 @@ export default function App() {
           <ErrorBoundary key={`explore-${exploreView}`}>
             <Suspense fallback={<WorkspaceFallback />}>
               {exploreView === 'graph' ? (
-                <GraphWorkspace
-                  externalFocusNodeId={graphFocusRequest?.nodeId}
-                  externalFocusToken={graphFocusRequest?.token}
-                />
+                <GraphWorkspace />
               ) : <VocabularyWorkspace />}
             </Suspense>
           </ErrorBoundary>
@@ -1841,111 +1785,7 @@ export default function App() {
       );
     }
 
-    if (activeWorkspace === 'decisions') {
-      return (
-        <WorkspaceShell
-          title="Decisions"
-          subtitle="Inspect decision chains, causal context, and precedent matches."
-          kicker="Decision Intelligence"
-        >
-          <ErrorBoundary key="decisions">
-            <Suspense fallback={<WorkspaceFallback />}>
-              <DecisionWorkspace />
-            </Suspense>
-          </ErrorBoundary>
-        </WorkspaceShell>
-      );
-    }
-
-    if (activeWorkspace === 'enrich') {
-      return (
-        <WorkspaceShell
-          title="Enrich"
-          subtitle="Import, export, reconcile, and audit graph entities."
-          kicker="Knowledge Audit"
-          tabs={
-            <>
-              <button className="workspace-tab" data-active={enrichView === 'import'} onClick={() => setEnrichView('import')}>
-                Import and Export
-              </button>
-              <button className="workspace-tab" data-active={enrichView === 'merge'} onClick={() => setEnrichView('merge')}>
-                Diff and Merge
-              </button>
-              <button className="workspace-tab" data-active={enrichView === 'resolve'} onClick={() => setEnrichView('resolve')}>
-                Entity Resolution
-              </button>
-              <button className="workspace-tab" data-active={enrichView === 'registry'} onClick={() => setEnrichView('registry')}>
-                Registry
-              </button>
-            </>
-          }
-        >
-          <ErrorBoundary key={`enrich-${enrichView}`}>
-            <Suspense fallback={<WorkspaceFallback />}>
-              {enrichView === 'import' ? <ImportExportWorkspace /> :
-               enrichView === 'merge' ? <DiffMergeWorkspace /> :
-               enrichView === 'resolve' ? <EntityResolutionTab /> :
-               <RegistryTab />}
-            </Suspense>
-          </ErrorBoundary>
-        </WorkspaceShell>
-      );
-    }
-
-    if (activeWorkspace === 'ontology-hub') {
-      return (
-        <WorkspaceShell
-          title="Ontology Hub"
-          subtitle="Load, browse, edit, and govern ontologies and vocabularies."
-          kicker="Schema Governance"
-          compact
-        >
-          <ErrorBoundary key="ontology-hub">
-            <Suspense fallback={<WorkspaceFallback />}>
-              <OntologyWorkspace
-                onJumpToGraphNode={(nodeId: string) => {
-                  setGraphFocusRequest({ nodeId, token: Date.now() });
-                  setActiveWorkspace('explore');
-                  setExploreView('graph');
-                }}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        </WorkspaceShell>
-      );
-    }
-
-    return (
-      <WorkspaceShell
-        title="Manage"
-        subtitle="Review provenance, lineage, ontology, and governance context."
-        kicker="Graph Governance"
-        tabs={
-          <>
-            <button className="workspace-tab" data-active={manageView === 'lineage'} onClick={() => setManageView('lineage')}>
-              PROV-O Lineage
-            </button>
-            <button className="workspace-tab" data-active={manageView === 'kg-overview'} onClick={() => setManageView('kg-overview')}>
-              KG Overview
-            </button>
-            <button className="workspace-tab" data-active={manageView === 'ontology'} onClick={() => setManageView('ontology')}>
-              Ontology Summary
-            </button>
-          </>
-        }
-      >
-        <ErrorBoundary key={`manage-${manageView}`}>
-          <Suspense fallback={<WorkspaceFallback />}>
-            {manageView === 'lineage' ? <LineageDiagram /> :
-             manageView === 'kg-overview' ? <KGOverviewTab /> :
-             <OntologySummaryTab onOpenVocabularyBrowser={() => {
-               setActiveWorkspace('explore');
-               setExploreView('vocabulary');
-             }} />}
-          </Suspense>
-        </ErrorBoundary>
-      </WorkspaceShell>
-    );
+    return null;
   };
 
   return (
@@ -1953,7 +1793,7 @@ export default function App() {
       <style>{shellStyles}</style>
       <div className="app-shell">
         <aside className="app-rail">
-          <button className="brand-pill" title="Semantica Knowledge Explorer" onClick={() => setActiveWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>SKE</button>
+          <button className="brand-pill" title="Nomenclador Explorer" onClick={() => setActiveWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>NE</button>
           {navItems.map(({ id, label, hint, icon: Icon }) => (
             <button
               key={id}
