@@ -3,14 +3,14 @@ requires = ["setuptools>=83.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "semantica"
-version = "0.6.5"
-description = "Accountability and context layer for AI agents. Context graphs, decision intelligence, full provenance tracking, and explainable reasoning engines — every AI decision traceable, every output auditable."
+name = "nomenclador-explorer"
+version = "0.1.0"
+description = "Nomenclador Knowledge Explorer - fork personalizado de Semantica Explorer para visualizacion de grafos de nomenclador."
 readme = "README.md"
 license = { text = "MIT" }
 
-authors = [{ name = "Semantica", email = "kaif@getsemantica.ai" }]
-maintainers = [{ name = "Semantica", email = "kaif@getsemantica.ai" }]
+authors = [{ name = "rogelioGuerrero" }]
+maintainers = [{ name = "rogelioGuerrero" }]
 
 requires-python = ">=3.8"
 
@@ -89,11 +89,11 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage      = "https://getsemantica.ai"
-Documentation = "https://docs.getsemantica.ai"
-Repository    = "https://github.com/semantica-agi/semantica"
-Changelog     = "https://github.com/semantica-agi/semantica/blob/main/CHANGELOG.md"
-"Bug Tracker" = "https://github.com/semantica-agi/semantica/issues"
+Homepage      = "https://github.com/rogelioGuerrero/nomenclador-explorer"
+Documentation = "https://github.com/rogelioGuerrero/nomenclador-explorer#readme"
+Repository    = "https://github.com/rogelioGuerrero/nomenclador-explorer"
+Changelog     = "https://github.com/rogelioGuerrero/nomenclador-explorer/blob/main/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/rogelioGuerrero/nomenclador-explorer/issues"
 Discord       = "https://discord.gg/sV34vps5hH"
 
 # ---------------- OPTIONAL DEPENDENCIES ----------------
