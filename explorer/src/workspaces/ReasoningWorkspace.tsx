@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { BrainCircuit, Play, RotateCcw, CheckCircle2, AlertCircle, Zap, GitBranch, Info } from "lucide-react";
+import { BrainCircuit, Play, RotateCcw, CheckCircle2, AlertCircle, Zap, GitBranch, Info, Sparkles, Wand2, Loader2 } from "lucide-react";
 
 const SAMPLE_FACTS = `deriva_de(area_cultivada, area_agricola)
 compone(area_agricola, uso_de_suelo)`;
@@ -41,6 +41,12 @@ export function ReasoningWorkspace() {
   } | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState("");
+  const [explanation, setExplanation] = useState("");
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [explainError, setExplainError] = useState("");
+  const [nlRule, setNlRule] = useState("");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState("");
 
   async function handleRun() {
     setIsRunning(true);
@@ -81,6 +87,53 @@ export function ReasoningWorkspace() {
     setRules(SAMPLE_RULE);
     setResult(null);
     setError("");
+    setExplanation("");
+    setExplainError("");
+  }
+
+  async function handleExplain() {
+    setIsExplaining(true);
+    setExplainError("");
+    setExplanation("");
+    try {
+      const response = await fetch("/api/ai/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          facts,
+          rules,
+          inferred_facts: result?.inferred_facts ?? [],
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `Status ${response.status}`);
+      setExplanation(data.explanation);
+    } catch (e) {
+      setExplainError(e instanceof Error ? e.message : "Error al explicar");
+    } finally {
+      setIsExplaining(false);
+    }
+  }
+
+  async function handleTranslateRule() {
+    if (!nlRule.trim()) return;
+    setIsTranslating(true);
+    setTranslateError("");
+    try {
+      const response = await fetch("/api/ai/translate-rule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: nlRule }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || `Status ${response.status}`);
+      setRules(data.rule);
+      if (data.facts_example) setFacts(data.facts_example);
+    } catch (e) {
+      setTranslateError(e instanceof Error ? e.message : "Error al traducir");
+    } finally {
+      setIsTranslating(false);
+    }
   }
 
   return (
@@ -156,6 +209,34 @@ export function ReasoningWorkspace() {
               <div style={{ fontSize: 11, color: "var(--ws-text-dim)" }}>Los hechos binarios inferidos se añaden como aristas</div>
             </div>
           </label>
+
+          {/* AI: Translate natural language to rule */}
+          <div style={{ padding: "12px 14px", borderRadius: "var(--ws-radius-sm)", border: "1px solid var(--ws-border)", background: "var(--ws-surface)", display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Wand2 size={13} color="var(--ws-accent)" />
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ws-text)" }}>Traducir regla en lenguaje natural</span>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                type="text"
+                className="ws-input"
+                value={nlRule}
+                onChange={(e) => setNlRule(e.target.value)}
+                placeholder="Ej: si un campo es equivalente a otro, hereda sus derivaciones"
+                style={{ flex: 1, fontSize: 12 }}
+                onKeyDown={(e) => { if (e.key === "Enter") handleTranslateRule(); }}
+              />
+              <button
+                className="ws-btn ws-btn--ghost"
+                onClick={handleTranslateRule}
+                disabled={isTranslating || !nlRule.trim()}
+                style={{ padding: "6px 10px", fontSize: 11, flexShrink: 0 }}
+              >
+                {isTranslating ? <Loader2 size={13} className="ws-spin" /> : <Sparkles size={13} />}
+              </button>
+            </div>
+            {translateError && <div style={{ fontSize: 11, color: "#fca5a5" }}>{translateError}</div>}
+          </div>
 
           {/* Actions */}
           <div style={{ display: "flex", gap: 8 }}>
@@ -237,6 +318,37 @@ export function ReasoningWorkspace() {
               <div className="ws-empty-icon"><Info size={32} /></div>
               <div className="ws-empty-title">Listo para inferir</div>
               <div className="ws-empty-body">Ingresa hechos y reglas a la izquierda, luego haz clic en Ejecutar inferencia para ver los resultados aquí.</div>
+            </div>
+          )}
+
+          {/* AI Explanation */}
+          {result && !isRunning && (
+            <div className="ws-animate-in" style={{ marginTop: 8, padding: "14px 16px", borderRadius: "var(--ws-radius-sm)", border: "1px solid rgba(99,102,241,0.22)", background: "rgba(99,102,241,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <Sparkles size={15} color="#a78bfa" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ws-text)" }}>Explicación con IA</span>
+                {!explanation && !isExplaining && (
+                  <button
+                    className="ws-btn ws-btn--ghost"
+                    onClick={handleExplain}
+                    style={{ marginLeft: "auto", padding: "4px 10px", fontSize: 11 }}
+                  >
+                    <Sparkles size={12} /> Explicar resultados
+                  </button>
+                )}
+              </div>
+              {isExplaining && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ws-text-dim)", fontSize: 12 }}>
+                  <Loader2 size={14} className="ws-spin" />
+                  <span>El LLM está analizando los resultados…</span>
+                </div>
+              )}
+              {explainError && (
+                <div style={{ fontSize: 12, color: "#fca5a5", marginBottom: 6 }}>{explainError}</div>
+              )}
+              {explanation && !isExplaining && (
+                <div style={{ fontSize: 13, color: "var(--ws-text)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{explanation}</div>
+              )}
             </div>
           )}
         </div>

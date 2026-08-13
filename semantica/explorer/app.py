@@ -164,6 +164,7 @@ def create_app(
         _logger.exception("Unhandled exception")
         return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
+    from .routes.ai import router as ai_router
     from .routes.analytics import router as analytics_router
     from .routes.annotations import router as annotations_router
     from .routes.decisions import router as decisions_router
@@ -188,6 +189,7 @@ def create_app(
     app.include_router(provenance_router, dependencies=_auth)
     app.include_router(vocabulary_router, dependencies=_auth)
     app.include_router(ontology_router, dependencies=_auth)
+    app.include_router(ai_router, dependencies=_auth)
 
     _WS_MAX_MESSAGE_BYTES = 64 * 1024  # 64 KB — control messages only
 
