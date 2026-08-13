@@ -17,10 +17,11 @@ import { ErrorBoundary } from './ErrorBoundary';
 const GraphWorkspace = lazy(() => import('./workspaces/GraphWorkspace/GraphWorkspace').then((module) => ({ default: module.GraphWorkspace })));
 const ReasoningWorkspace = lazy(() => import('./workspaces/ReasoningWorkspace').then((module) => ({ default: module.ReasoningWorkspace })));
 const SparqlWorkspace = lazy(() => import('./workspaces/SparqlWorkspace/SparqlWorkspace').then((module) => ({ default: module.SparqlWorkspace })));
-const VocabularyWorkspace = lazy(() => import('./workspaces/VocabularyWorkspace/VocabularyWorkspace').then((module) => ({ default: module.VocabularyWorkspace })));
+const ConceptBrowser = lazy(() => import('./workspaces/NomencladorWorkspace/ConceptBrowser').then((module) => ({ default: module.ConceptBrowser })));
+const NomencladorWorkspace = lazy(() => import('./workspaces/NomencladorWorkspace/NomencladorWorkspace').then((module) => ({ default: module.NomencladorWorkspace })));
 
-type WorkspaceId = 'welcome' | 'explore' | 'analyze';
-type ExploreView = 'graph' | 'vocabulary';
+type WorkspaceId = 'welcome' | 'explore' | 'analyze' | 'nomenclador';
+type ExploreView = 'graph' | 'concepts';
 type AnalyzeView = 'sparql' | 'reasoning';
 
 type NavItem = {
@@ -64,6 +65,7 @@ const PREVIEW_DOTS = Array.from({ length: 42 }, (_, i) => ({
 const navItems: NavItem[] = [
   { id: 'explore', label: 'Nomenclador', hint: 'Grafo y vocabulario', icon: Database },
   { id: 'analyze', label: 'Analizar', hint: 'Consultas e inferencia', icon: FileSearch },
+  { id: 'nomenclador', label: 'Gobernanza', hint: 'Interoperabilidad, calidad y validación', icon: Radar },
 ];
 
 const shellStyles = `
@@ -1511,8 +1513,8 @@ function WelcomeScreen({
 
   const secondaryLaunchers: LandingAction[] = [
     {
-      label: 'Vocabulario',
-      description: 'Esquemas y términos',
+      label: 'Conceptos',
+      description: 'Browser de conceptos del nomenclador',
       icon: Database,
       onClick: onOpenVocabulary,
     },
@@ -1720,7 +1722,7 @@ export default function App() {
           }}
           onOpenVocabulary={() => {
             setActiveWorkspace('explore');
-            setExploreView('vocabulary');
+            setExploreView('concepts');
           }}
           onOpenReasoning={() => {
             setActiveWorkspace('analyze');
@@ -1734,16 +1736,16 @@ export default function App() {
       return (
         <WorkspaceShell
           title="Explore"
-          subtitle={exploreView === 'graph' ? undefined : "Browse the graph and switch views without leaving the workspace."}
-          kicker={exploreView === 'graph' ? 'Graph Studio' : 'Vocabulary Browser'}
+          subtitle={exploreView === 'graph' ? undefined : "Browse nomenclador concepts, their sources, classifiers, and normative references."}
+          kicker={exploreView === 'graph' ? 'Graph Studio' : 'Concept Browser'}
           compact
           tabs={
             <>
               <button className="workspace-tab" data-active={exploreView === 'graph'} onClick={() => setExploreView('graph')}>
                 Nomenclador Explorer
               </button>
-              <button className="workspace-tab" data-active={exploreView === 'vocabulary'} onClick={() => setExploreView('vocabulary')}>
-                Vocabulary Browser
+              <button className="workspace-tab" data-active={exploreView === 'concepts'} onClick={() => setExploreView('concepts')}>
+                Concept Browser
               </button>
             </>
           }
@@ -1752,7 +1754,7 @@ export default function App() {
             <Suspense fallback={<WorkspaceFallback />}>
               {exploreView === 'graph' ? (
                 <GraphWorkspace />
-              ) : <VocabularyWorkspace />}
+              ) : <ConceptBrowser />}
             </Suspense>
           </ErrorBoundary>
         </WorkspaceShell>
@@ -1779,6 +1781,22 @@ export default function App() {
           <ErrorBoundary key={`analyze-${analyzeView}`}>
             <Suspense fallback={<WorkspaceFallback />}>
               {analyzeView === 'reasoning' ? <ReasoningWorkspace /> : <SparqlWorkspace />}
+            </Suspense>
+          </ErrorBoundary>
+        </WorkspaceShell>
+      );
+    }
+
+    if (activeWorkspace === 'nomenclador') {
+      return (
+        <WorkspaceShell
+          title="Gobernanza"
+          subtitle="Interoperabilidad, calidad de datos y validación de campos."
+          kicker="Governance Agent"
+        >
+          <ErrorBoundary key="nomenclador">
+            <Suspense fallback={<WorkspaceFallback />}>
+              <NomencladorWorkspace />
             </Suspense>
           </ErrorBoundary>
         </WorkspaceShell>

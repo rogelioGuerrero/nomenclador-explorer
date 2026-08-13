@@ -171,6 +171,7 @@ def create_app(
     from .routes.enrich import router as enrich_router
     from .routes.export_import import router as export_import_router
     from .routes.graph import router as graph_router
+    from .routes.nomenclador import router as nomenclador_router
     from .routes.ontology import router as ontology_router
     from .routes.provenance import router as provenance_router
     from .routes.sparql import router as sparql_router
@@ -190,6 +191,7 @@ def create_app(
     app.include_router(vocabulary_router, dependencies=_auth)
     app.include_router(ontology_router, dependencies=_auth)
     app.include_router(ai_router, dependencies=_auth)
+    app.include_router(nomenclador_router, dependencies=_auth)
 
     _WS_MAX_MESSAGE_BYTES = 64 * 1024  # 64 KB — control messages only
 

@@ -4,6 +4,14 @@ Shared graph session — lazy singleton across all tool handlers.
 The graph is initialised once on first access and shared for the
 lifetime of the MCP server process.  Set SEMANTICA_KG_PATH to
 automatically load a persisted graph on start.
+
+Two graph backends are supported:
+  - ContextGraph (semantica) — for extraction/decision/reasoning tools
+  - NomencladorAgent — for nomenclador-specific tools (list_concepts, etc.)
+
+Both share the same SEMANTICA_KG_PATH env var. The NomencladorAgent
+loads the file as a NetworkX node-link graph, while ContextGraph uses
+its own load_from_file method.
 """
 
 from __future__ import annotations
@@ -12,7 +20,7 @@ import logging
 import os
 from typing import Any, Optional
 
-log = logging.getLogger("semantica.mcp.session")
+log = logging.getLogger("mcp.session")
 
 _graph: Optional[Any] = None
 
@@ -33,10 +41,10 @@ def get_graph() -> Any:
         kg_path = os.environ.get("SEMANTICA_KG_PATH", "").strip()
         if kg_path and os.path.exists(kg_path):
             try:
-                _graph.load(kg_path)
-                log.info("Graph loaded from %s", kg_path)
+                _graph.load_from_file(kg_path)
+                log.info("ContextGraph loaded from %s", kg_path)
             except Exception as exc:
-                log.warning("Could not load graph from %s: %s", kg_path, exc)
+                log.warning("Could not load ContextGraph from %s: %s", kg_path, exc)
 
     return _graph
 

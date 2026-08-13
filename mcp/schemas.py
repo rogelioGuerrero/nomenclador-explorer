@@ -289,4 +289,89 @@ GET_ANALYTICS = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Nomenclador tools
+# ---------------------------------------------------------------------------
+
+NOMENCLADOR_LIST_CONCEPTS = {"type": "object", "properties": {}}
+
+NOMENCLADOR_SEARCH_VARIABLE = {
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Variable name to search for (e.g. 'sexo', 'edad', 'fecha')",
+        },
+    },
+    "required": ["name"],
+}
+
+NOMENCLADOR_GET_CONCEPT = {
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "Concept name to get full detail for",
+        },
+    },
+    "required": ["name"],
+}
+
+NOMENCLADOR_CHECK_INTEROP = {
+    "type": "object",
+    "properties": {
+        "source_db": {
+            "type": "string",
+            "description": "Source database name (e.g. 'sample_censo')",
+        },
+        "target_db": {
+            "type": "string",
+            "description": "Target database name (e.g. 'sample_hospital')",
+        },
+    },
+    "required": ["source_db", "target_db"],
+}
+
+NOMENCLADOR_GET_TRANSFORM = {
+    "type": "object",
+    "properties": {
+        "source_db": {
+            "type": "string",
+            "description": "Source database name",
+        },
+        "target_db": {
+            "type": "string",
+            "description": "Target database name",
+        },
+    },
+    "required": ["source_db", "target_db"],
+}
+
+NOMENCLADOR_VALIDATE_FIELD = {
+    "type": "object",
+    "properties": {
+        "column_name": {
+            "type": "string",
+            "description": "Name of the column to validate",
+        },
+        "sample_values": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Sample values from the column (e.g. ['M', 'F', 'H'])",
+        },
+    },
+    "required": ["column_name", "sample_values"],
+}
+
+NOMENCLADOR_GET_CLASSIFIER = {
+    "type": "object",
+    "properties": {
+        "standard_id": {
+            "type": "string",
+            "description": "Standard identifier (e.g. 'ISO_5218', 'CIE_10')",
+        },
+    },
+    "required": ["standard_id"],
+}
+
 EMPTY = {"type": "object", "properties": {}}

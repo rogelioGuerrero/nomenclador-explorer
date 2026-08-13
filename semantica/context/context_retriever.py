@@ -82,8 +82,15 @@ from typing import Any, Dict, List, Optional, Union
 
 from ..utils.logging import get_logger
 from ..utils.progress_tracker import get_progress_tracker
-from ..vector_store.hybrid_similarity import HybridSimilarityCalculator
-from ..vector_store.decision_embedding_pipeline import DecisionEmbeddingPipeline
+# vector_store was removed when trimming semantica — these are optional
+try:
+    from ..vector_store.hybrid_similarity import HybridSimilarityCalculator
+except ImportError:
+    HybridSimilarityCalculator = None  # type: ignore[assignment,misc]
+try:
+    from ..vector_store.decision_embedding_pipeline import DecisionEmbeddingPipeline
+except ImportError:
+    DecisionEmbeddingPipeline = None  # type: ignore[assignment,misc]
 from ..kg.path_finder import PathFinder
 from ..kg.centrality_calculator import CentralityCalculator
 from ..kg.community_detector import CommunityDetector

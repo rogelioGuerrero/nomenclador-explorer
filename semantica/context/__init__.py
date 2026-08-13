@@ -105,29 +105,67 @@ Production Examples:
     - Legal: Case precedent analysis, decision consistency
 """
 
-from .agent_context import AgentContext
 from .agent_memory import AgentMemory, MemoryItem
 from .context_graph import ContextEdge, ContextGraph, ContextNode
-from .context_retriever import ContextRetriever, RetrievedContext, TemporalGraphRetriever
-from .decision_context import DecisionContext
 from .entity_linker import EntityLink, EntityLinker, LinkedEntity
 
-# Decision tracking imports
-from .decision_models import (
-    Decision, DecisionContext as DecisionContextModel, Policy, 
-    PolicyException, Precedent, ApprovalChain
-)
-from .decision_recorder import DecisionRecorder
-from .decision_query import DecisionQuery
-from .causal_analyzer import CausalChainAnalyzer
-from .policy_engine import PolicyEngine
-from .decision_methods import (
-    record_decision, find_precedents, get_causal_chain, get_applicable_policies,
-    multi_hop_query, capture_decision_trace, find_exception_precedents,
-    analyze_decision_impact, create_policy_with_versioning, check_decision_compliance,
-    get_decision_statistics, setup_decision_tracking
-)
-from .graph_schema import setup_decision_schema, verify_schema, get_schema_info
+# Decision tracking imports — optional, depend on vector_store/embeddings
+# which were removed when trimming semantica for nomenclador-explorer.
+try:
+    from .agent_context import AgentContext
+except ImportError:
+    AgentContext = None  # type: ignore[assignment,misc]
+try:
+    from .context_retriever import ContextRetriever, RetrievedContext, TemporalGraphRetriever
+except ImportError:
+    ContextRetriever = None  # type: ignore[assignment,misc]
+    RetrievedContext = None  # type: ignore[assignment,misc]
+    TemporalGraphRetriever = None  # type: ignore[assignment,misc]
+try:
+    from .decision_context import DecisionContext
+except ImportError:
+    DecisionContext = None  # type: ignore[assignment,misc]
+try:
+    from .decision_models import (
+        Decision, DecisionContext as DecisionContextModel, Policy, 
+        PolicyException, Precedent, ApprovalChain
+    )
+except ImportError:
+    Decision = None  # type: ignore[assignment,misc]
+    DecisionContextModel = None  # type: ignore[assignment,misc]
+    Policy = None  # type: ignore[assignment,misc]
+    PolicyException = None  # type: ignore[assignment,misc]
+    Precedent = None  # type: ignore[assignment,misc]
+    ApprovalChain = None  # type: ignore[assignment,misc]
+try:
+    from .decision_recorder import DecisionRecorder
+except ImportError:
+    DecisionRecorder = None  # type: ignore[assignment,misc]
+try:
+    from .decision_query import DecisionQuery
+except ImportError:
+    DecisionQuery = None  # type: ignore[assignment,misc]
+try:
+    from .causal_analyzer import CausalChainAnalyzer
+except ImportError:
+    CausalChainAnalyzer = None  # type: ignore[assignment,misc]
+try:
+    from .policy_engine import PolicyEngine
+except ImportError:
+    PolicyEngine = None  # type: ignore[assignment,misc]
+try:
+    from .decision_methods import (
+        record_decision, find_precedents, get_causal_chain, get_applicable_policies,
+        multi_hop_query, capture_decision_trace, find_exception_precedents,
+        analyze_decision_impact, create_policy_with_versioning, check_decision_compliance,
+        get_decision_statistics, setup_decision_tracking
+    )
+except ImportError:
+    pass
+try:
+    from .graph_schema import setup_decision_schema, verify_schema, get_schema_info
+except ImportError:
+    pass
 
 __all__ = [
     # High-level interface
