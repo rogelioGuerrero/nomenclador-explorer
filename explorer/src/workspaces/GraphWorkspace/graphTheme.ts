@@ -2,7 +2,7 @@ export type GraphZoomTier = "overview" | "structure" | "inspection";
 export type GraphNodeVisualState = "default" | "hovered" | "selected" | "neighbor" | "path" | "inactive" | "muted";
 export type GraphEdgeVisualState = "default" | "backbone" | "hovered" | "selected" | "neighbor" | "path" | "inactive" | "muted";
 export type GraphNodeShapeVariant = "default" | "temporal" | "inferred" | "provenance" | "selected";
-export type GraphEntityShapeVariant = "entity" | "biomolecule" | "condition" | "compound" | "process" | "community";
+export type GraphEntityShapeVariant = "entity" | "concept" | "field" | "classifier" | "operation" | "source" | "normative";
 export type GraphEdgeVariant = "line" | "directional" | "bidirectionalCurve" | "parallelCurve" | "pathSignal";
 export type GraphArrowVisibilityPolicy = "hidden" | "contextual" | "always";
 export type GraphLabelVisibilityPolicy = "none" | "priority" | "local" | "always";
@@ -607,7 +607,7 @@ export const GRAPH_THEME: GraphTheme = {
     },
     entityShapes: {
       entity: {
-        label: "Entity",
+        label: "Other",
         shapeKind: 0,
         aspectRatio: 1,
         fillAlpha: 0.9,
@@ -616,8 +616,8 @@ export const GRAPH_THEME: GraphTheme = {
         borderBoost: 0.08,
         minSize: 0,
       },
-      biomolecule: {
-        label: "Biomolecule",
+      concept: {
+        label: "Concept",
         shapeKind: 1,
         aspectRatio: 1,
         fillAlpha: 0.9,
@@ -626,8 +626,8 @@ export const GRAPH_THEME: GraphTheme = {
         borderBoost: 0.16,
         minSize: 1.2,
       },
-      condition: {
-        label: "Condition",
+      field: {
+        label: "Field",
         shapeKind: 2,
         aspectRatio: 1.04,
         fillAlpha: 0.88,
@@ -636,8 +636,8 @@ export const GRAPH_THEME: GraphTheme = {
         borderBoost: 0.18,
         minSize: 1.6,
       },
-      compound: {
-        label: "Compound",
+      classifier: {
+        label: "Classifier",
         shapeKind: 3,
         aspectRatio: 1.48,
         fillAlpha: 0.88,
@@ -646,8 +646,8 @@ export const GRAPH_THEME: GraphTheme = {
         borderBoost: 0.14,
         minSize: 1.4,
       },
-      process: {
-        label: "Process",
+      operation: {
+        label: "Operation",
         shapeKind: 4,
         aspectRatio: 1.1,
         fillAlpha: 0.87,
@@ -656,8 +656,8 @@ export const GRAPH_THEME: GraphTheme = {
         borderBoost: 0.16,
         minSize: 1.4,
       },
-      community: {
-        label: "Community",
+      source: {
+        label: "Source",
         shapeKind: 5,
         aspectRatio: 1,
         fillAlpha: 0.68,
@@ -665,6 +665,16 @@ export const GRAPH_THEME: GraphTheme = {
         coreScale: 0.78,
         borderBoost: 0.34,
         minSize: 2,
+      },
+      normative: {
+        label: "Normative",
+        shapeKind: 6,
+        aspectRatio: 1.15,
+        fillAlpha: 0.82,
+        shellAlpha: 0.22,
+        coreScale: 0.3,
+        borderBoost: 0.24,
+        minSize: 1.8,
       },
     },
     selectedRing: {

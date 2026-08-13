@@ -159,11 +159,12 @@ const loadTemporalOverlayPlugin = () => import("./plugins/temporalOverlayPlugin"
 const EMPTY_PATH: string[] = [];
 const COMPACT_TOOLBAR_CLUSTER_IDS = new Set(["camera", "utility"]);
 const ENTITY_VISUAL_KEY: Array<{ shape: GraphEntityShapeVariant; label: string }> = [
-  { shape: "biomolecule", label: "Biomolecule" },
-  { shape: "condition", label: "Condition" },
-  { shape: "compound", label: "Compound" },
-  { shape: "process", label: "Process" },
-  { shape: "community", label: "Community" },
+  { shape: "concept", label: "Concept" },
+  { shape: "field", label: "Field" },
+  { shape: "classifier", label: "Classifier" },
+  { shape: "operation", label: "Operation" },
+  { shape: "source", label: "Source" },
+  { shape: "normative", label: "Normative" },
   { shape: "entity", label: "Other" },
 ];
 const DEBUG_GRAPH_WORKSPACE = import.meta.env.DEV;
@@ -747,27 +748,31 @@ const HUD_CSS = `
   .explore-entity-key-mark[data-shape="entity"] {
     border-radius: 999px;
   }
-  .explore-entity-key-mark[data-shape="biomolecule"] {
+  .explore-entity-key-mark[data-shape="concept"] {
     clip-path: polygon(50% 7%, 86% 28%, 86% 72%, 50% 93%, 14% 72%, 14% 28%);
   }
-  .explore-entity-key-mark[data-shape="condition"] {
+  .explore-entity-key-mark[data-shape="field"] {
     border-radius: 5px;
     transform: rotate(45deg) scale(0.88);
   }
-  .explore-entity-key-mark[data-shape="compound"] {
+  .explore-entity-key-mark[data-shape="classifier"] {
     width: 20px;
     border-radius: 999px;
   }
-  .explore-entity-key-mark[data-shape="process"] {
+  .explore-entity-key-mark[data-shape="operation"] {
     border-radius: 4px;
     clip-path: polygon(0 0, 86% 0, 100% 16%, 100% 100%, 0 100%);
   }
-  .explore-entity-key-mark[data-shape="community"] {
+  .explore-entity-key-mark[data-shape="source"] {
     width: 15px;
     height: 15px;
     border-radius: 999px;
     background: rgba(96, 190, 180, 0.16);
     border-color: rgba(229, 213, 175, 0.54);
+  }
+  .explore-entity-key-mark[data-shape="normative"] {
+    border-radius: 3px;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 12% 100%, 0 88%);
   }
   .explore-search-results {
     display: flex;

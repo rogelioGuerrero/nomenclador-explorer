@@ -1502,7 +1502,7 @@ export function resolveNodeVariant(state: GraphNodeVisualState, attrs: NodeAttri
 
 export function resolveEntityShape(attrs: NodeAttributes): GraphEntityShapeVariant {
   if (attrs.isCommunityGroup) {
-    return "community";
+    return "entity";
   }
 
   // Prefer the shape stamped at load time; fall back to classifyEntityShape for
@@ -2367,7 +2367,7 @@ function buildCommunityGroupedGraph(): GraphDisplayResult {
       mutedColor: withAlpha(summary.color, 0.22),
       glowColor: withAlpha(summary.color, GRAPH_THEME.grouped.style.glowAlpha),
       borderColor: withAlpha(summary.color, 0.74),
-      entityShape: "community",
+      entityShape: "entity",
       nodeType: "community",
       semanticGroup: summary.dominantSemanticGroup,
       labelVisibilityPolicy: position.labelPriority > 0.9 ? "priority" : "none",

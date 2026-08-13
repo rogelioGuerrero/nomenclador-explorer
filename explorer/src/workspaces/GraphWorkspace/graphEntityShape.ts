@@ -1,10 +1,12 @@
 import type { GraphEntityShapeVariant } from "./graphTheme";
 
 export const ENTITY_SHAPE_ALIASES: Array<[GraphEntityShapeVariant, RegExp]> = [
-  ["biomolecule", /\b(gene|protein|enzyme|receptor|target|transcript|rna|dna|mirna|biomolecule|peptide)\b/i],
-  ["condition", /\b(disease|condition|phenotype|symptom|disorder|syndrome|diagnosis|pathology|trait)\b/i],
-  ["compound", /\b(drug|chemical|compound|metabolite|molecule|small[_\s-]?molecule|ligand|therapeutic|medication|substance)\b/i],
-  ["process", /\b(pathway|process|mechanism|function|ontology|biological[_\s-]?process|cellular[_\s-]?process|program|module)\b/i],
+  ["concept", /\b(concept|concepto)\b/i],
+  ["field", /\b(field|campo|variable)\b/i],
+  ["classifier", /\b(classifier|clasificador)\b/i],
+  ["operation", /\b(operation|operacion|transform)\b/i],
+  ["source", /\b(source|fuente|dataset|origin)\b/i],
+  ["normative", /\b(normative|normativa|regulation|legal)\b/i],
 ];
 
 export function classifyEntityShape(
