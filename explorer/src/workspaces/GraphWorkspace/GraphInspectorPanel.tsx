@@ -45,7 +45,7 @@ export interface GraphInspectorPanelProps {
   onFocusNode?: (nodeId: string) => void;
 }
 
-const PROVENANCE_KEYS = ["source", "source_url", "pmid", "pmids", "evidence", "provenance", "confidence"] as const;
+const PROVENANCE_KEYS = ["source", "source_url", "pmid", "pmids", "evidence", "provenance", "confidence", "custodian", "custodian_department", "source_db", "normative"] as const;
 
 function sourceAttribution(properties: Record<string, unknown>) {
   return PROVENANCE_KEYS

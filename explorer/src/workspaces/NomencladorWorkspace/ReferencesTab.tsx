@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Loader2, Search, FileText, BookOpen, RefreshCw } from "lucide-react";
+import { Loader2, Search, FileText, BookOpen, RefreshCw, GitBranch } from "lucide-react";
 
 type Normative = {
   id: string;
@@ -26,6 +26,29 @@ type RagSearchResult = {
   score: number;
 };
 
+type LineageNode = {
+  id: string;
+  label: string;
+  prov_type: string;
+  source_document?: string | null;
+  source_location?: string | null;
+  confidence?: number | null;
+};
+
+type LineageEdge = {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  direction: string;
+};
+
+type LineageResponse = {
+  nodes: LineageNode[];
+  edges: LineageEdge[];
+  source?: string;
+};
+
 export function ReferencesTab() {
   const [normatives, setNormatives] = useState<Normative[]>([]);
   const [chunks, setChunks] = useState<RagChunk[]>([]);
@@ -34,6 +57,10 @@ export function ReferencesTab() {
   const [searchResults, setSearchResults] = useState<RagSearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [reloadStatus, setReloadStatus] = useState<string>("");
+  const [lineageQuery, setLineageQuery] = useState("");
+  const [lineageData, setLineageData] = useState<LineageResponse | null>(null);
+  const [lineageLoading, setLineageLoading] = useState(false);
+  const [lineageError, setLineageError] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -86,6 +113,42 @@ export function ReferencesTab() {
     } catch (e) {
       setReloadStatus("Error de conexión");
     }
+  }
+
+  async function runLineageSearch() {
+    if (!lineageQuery.trim()) return;
+    setLineageLoading(true);
+    setLineageError("");
+    setLineageData(null);
+    try {
+      const res = await fetch("/api/provenance?node_id=" + encodeURIComponent(lineageQuery.trim()));
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text.substring(0, 120)}`);
+      }
+      const data: LineageResponse = await res.json();
+      setLineageData(data);
+    } catch (e) {
+      setLineageError(e instanceof Error ? e.message : "Error al cargar lineage");
+    } finally {
+      setLineageLoading(false);
+    }
+  }
+
+  async function downloadLineageReport(format: "json" | "markdown") {
+    if (!lineageQuery.trim()) return;
+    const suffix = format === "markdown" ? "markdown" : "json";
+    const res = await fetch(`/api/provenance/report?node_id=${encodeURIComponent(lineageQuery.trim())}&format=${suffix}`);
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${lineageQuery.trim()}_provenance.${format === "markdown" ? "md" : "json"}`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   }
 
   if (loading) {
@@ -240,6 +303,125 @@ export function ReferencesTab() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Provenance Lineage */}
+      <div className="ws-card">
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <GitBranch size={20} color="var(--ws-green)" />
+          <h3 style={{ margin: 0, fontSize: "15px", color: "var(--ws-text)" }}>
+            Cadena de proveniencia (PROV-O)
+          </h3>
+          {lineageData && (
+            <span style={{
+              background: "var(--ws-green-soft)", color: "var(--ws-green)",
+              padding: "2px 10px", borderRadius: 12, fontSize: "12px",
+            }}>
+              {lineageData.nodes.length} nodos · {lineageData.edges.length} aristas
+            </span>
+          )}
+        </div>
+
+        <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+          <input
+            type="text"
+            placeholder="Node ID del indicador o concepto…"
+            value={lineageQuery}
+            onChange={(e) => setLineageQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && runLineageSearch()}
+            style={{
+              background: "var(--ws-surface)", border: "1px solid var(--ws-border)",
+              borderRadius: 8, padding: "10px 14px", color: "var(--ws-text)",
+              fontSize: "13px", flex: 1,
+            }}
+          />
+          <button
+            onClick={runLineageSearch}
+            disabled={!lineageQuery.trim() || lineageLoading}
+            style={{
+              background: "var(--ws-green-soft)", border: "1px solid rgba(76,195,138,0.3)",
+              borderRadius: 8, padding: "8px 18px", color: "var(--ws-green)",
+              fontSize: "13px", fontWeight: 600, cursor: "pointer",
+              opacity: (!lineageQuery.trim() || lineageLoading) ? 0.4 : 1,
+            }}
+          >
+            {lineageLoading ? <Loader2 size={14} className="animate-spin" /> : "Trazar"}
+          </button>
+        </div>
+
+        {lineageError && (
+          <div style={{
+            padding: 12, borderRadius: 8, marginBottom: 12,
+            background: "rgba(255,157,175,0.08)", border: "1px solid rgba(255,157,175,0.18)",
+            color: "#ffb4c2", fontSize: "12px",
+          }}>
+            {lineageError}
+          </div>
+        )}
+
+        {lineageData && lineageData.nodes.length > 0 && (
+          <>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button
+                onClick={() => downloadLineageReport("json")}
+                style={{
+                  background: "var(--ws-surface)", border: "1px solid var(--ws-border)",
+                  borderRadius: 6, padding: "6px 12px", color: "var(--ws-text-muted)",
+                  fontSize: "11px", cursor: "pointer",
+                }}
+              >
+                Export JSON
+              </button>
+              <button
+                onClick={() => downloadLineageReport("markdown")}
+                style={{
+                  background: "var(--ws-surface)", border: "1px solid var(--ws-border)",
+                  borderRadius: 6, padding: "6px 12px", color: "var(--ws-text-muted)",
+                  fontSize: "11px", cursor: "pointer",
+                }}
+              >
+                Export MD
+              </button>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {lineageData.nodes.map((n) => (
+                <div key={n.id} className="ws-panel--inset" style={{ padding: 12, borderRadius: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{
+                        fontSize: "10px", padding: "1px 6px", borderRadius: 4, fontWeight: 600,
+                        background: n.prov_type === "Agent" ? "rgba(74,163,255,0.12)" : n.prov_type === "Activity" ? "rgba(242,182,109,0.12)" : "rgba(76,195,138,0.12)",
+                        color: n.prov_type === "Agent" ? "var(--ws-accent)" : n.prov_type === "Activity" ? "var(--ws-amber)" : "var(--ws-green)",
+                      }}>
+                        {n.prov_type}
+                      </span>
+                      <span style={{ fontSize: "13px", color: "var(--ws-text)", fontWeight: 600 }}>
+                        {n.label}
+                      </span>
+                    </div>
+                    {n.confidence != null && (
+                      <span style={{ fontSize: "10px", color: "var(--ws-text-dim)" }}>
+                        conf: {(n.confidence * 100).toFixed(0)}%
+                      </span>
+                    )}
+                  </div>
+                  {n.source_document && (
+                    <div style={{ fontSize: "11px", color: "var(--ws-text-muted)" }}>
+                      fuente: {n.source_document}
+                      {n.source_location ? ` · ${n.source_location}` : ""}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {lineageData && lineageData.nodes.length === 0 && (
+          <div style={{ fontSize: "12px", color: "var(--ws-text-muted)" }}>
+            No se encontró cadena de proveniencia para este nodo.
+          </div>
+        )}
       </div>
 
       {/* Graph reload */}

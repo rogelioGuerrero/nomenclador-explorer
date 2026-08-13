@@ -17,12 +17,13 @@ import { ErrorBoundary } from './ErrorBoundary';
 const GraphWorkspace = lazy(() => import('./workspaces/GraphWorkspace/GraphWorkspace').then((module) => ({ default: module.GraphWorkspace })));
 const ReasoningWorkspace = lazy(() => import('./workspaces/ReasoningWorkspace').then((module) => ({ default: module.ReasoningWorkspace })));
 const SparqlWorkspace = lazy(() => import('./workspaces/SparqlWorkspace/SparqlWorkspace').then((module) => ({ default: module.SparqlWorkspace })));
+const LineageDiagram = lazy(() => import('./workspaces/LineageWorkspace/LineageDiagram').then((module) => ({ default: module.LineageDiagram })));
 const ConceptBrowser = lazy(() => import('./workspaces/NomencladorWorkspace/ConceptBrowser').then((module) => ({ default: module.ConceptBrowser })));
 const NomencladorWorkspace = lazy(() => import('./workspaces/NomencladorWorkspace/NomencladorWorkspace').then((module) => ({ default: module.NomencladorWorkspace })));
 
 type WorkspaceId = 'welcome' | 'explore' | 'analyze' | 'nomenclador';
 type ExploreView = 'graph' | 'concepts';
-type AnalyzeView = 'sparql' | 'reasoning';
+type AnalyzeView = 'sparql' | 'reasoning' | 'lineage';
 
 type NavItem = {
   id: WorkspaceId;
@@ -1766,7 +1767,7 @@ export default function App() {
         <WorkspaceShell
           title="Analyze"
           subtitle="Query the active graph and test inference rules."
-          kicker={analyzeView === 'reasoning' ? 'Reasoning Engine' : 'SPARQL Query'}
+          kicker={analyzeView === 'reasoning' ? 'Reasoning Engine' : analyzeView === 'sparql' ? 'SPARQL Query' : 'PROV-O Lineage'}
           tabs={
             <>
               <button className="workspace-tab" data-active={analyzeView === 'reasoning'} onClick={() => setAnalyzeView('reasoning')}>
@@ -1775,12 +1776,15 @@ export default function App() {
               <button className="workspace-tab" data-active={analyzeView === 'sparql'} onClick={() => setAnalyzeView('sparql')}>
                 SPARQL Querying
               </button>
+              <button className="workspace-tab" data-active={analyzeView === 'lineage'} onClick={() => setAnalyzeView('lineage')}>
+                Lineage
+              </button>
             </>
           }
         >
           <ErrorBoundary key={`analyze-${analyzeView}`}>
             <Suspense fallback={<WorkspaceFallback />}>
-              {analyzeView === 'reasoning' ? <ReasoningWorkspace /> : <SparqlWorkspace />}
+              {analyzeView === 'reasoning' ? <ReasoningWorkspace /> : analyzeView === 'sparql' ? <SparqlWorkspace /> : <LineageDiagram />}
             </Suspense>
           </ErrorBoundary>
         </WorkspaceShell>
