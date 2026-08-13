@@ -147,8 +147,8 @@ export function ReasoningWorkspace() {
               <BrainCircuit size={16} />
             </div>
             <div>
-              <div className="ws-eyebrow" style={{ marginBottom: 2 }}>Forward Chaining</div>
-              <div style={{ color: "var(--ws-text)", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>Inference Engine</div>
+              <div className="ws-eyebrow" style={{ marginBottom: 2 }}>Encadenamiento hacia adelante</div>
+              <div style={{ color: "var(--ws-text)", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>Motor de Inferencia</div>
             </div>
           </div>
         </div>

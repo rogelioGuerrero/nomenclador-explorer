@@ -12,6 +12,7 @@ via env vars. Self-contained — no dependency on governance-agent code.
 import os
 import time
 import threading
+from pathlib import Path
 from typing import List, Optional
 
 import httpx
@@ -20,7 +21,10 @@ from pydantic import BaseModel, Field
 
 try:
     from dotenv import load_dotenv
-    load_dotenv()
+    # Load .env from project root and CWD
+    for _env_path in [Path.cwd() / ".env", Path(__file__).resolve().parents[3] / ".env"]:
+        if _env_path.exists():
+            load_dotenv(_env_path)
 except ImportError:
     pass
 
@@ -28,34 +32,42 @@ router = APIRouter(tags=["AI"])
 
 # === LLM PROVIDERS (self-contained, reads same env vars as governance-agent) ===
 
-_PROVIDERS = []
+def _build_providers() -> list[dict]:
+    """Build provider list dynamically from env vars.
 
-_groq_key = os.getenv("GROQ_API_KEY", "")
-if _groq_key:
-    _PROVIDERS.append({
-        "name": "groq",
-        "url": "https://api.groq.com/openai/v1/chat/completions",
-        "key": _groq_key,
-        "models": [os.getenv("GROQ_MODEL_PRIMARY", "llama-3.3-70b-versatile")],
-    })
+    Called on each request so keys set after server start (e.g. via .env
+    or export) are picked up without restarting.
+    """
+    providers = []
 
-_gemini_key = os.getenv("GEMINI_API_KEY", "")
-if _gemini_key:
-    _PROVIDERS.append({
-        "name": "gemini",
-        "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        "key": _gemini_key,
-        "models": [os.getenv("GEMINI_MODEL", "gemini-2.0-flash")],
-    })
+    groq_key = os.getenv("GROQ_API_KEY", "")
+    if groq_key:
+        providers.append({
+            "name": "groq",
+            "url": "https://api.groq.com/openai/v1/chat/completions",
+            "key": groq_key,
+            "models": [os.getenv("GROQ_MODEL_PRIMARY", "llama-3.3-70b-versatile")],
+        })
 
-_sambanova_key = os.getenv("SAMBANOVA_API_KEY", "")
-if _sambanova_key:
-    _PROVIDERS.append({
-        "name": "sambanova",
-        "url": "https://api.sambanova.ai/v1/chat/completions",
-        "key": _sambanova_key,
-        "models": [os.getenv("SAMBANOVA_MODEL", "Meta-Llama-3.1-70B-Instruct")],
-    })
+    gemini_key = os.getenv("GEMINI_API_KEY", "")
+    if gemini_key:
+        providers.append({
+            "name": "gemini",
+            "url": "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+            "key": gemini_key,
+            "models": [os.getenv("GEMINI_MODEL", "gemini-2.0-flash")],
+        })
+
+    sambanova_key = os.getenv("SAMBANOVA_API_KEY", "")
+    if sambanova_key:
+        providers.append({
+            "name": "sambanova",
+            "url": "https://api.sambanova.ai/v1/chat/completions",
+            "key": sambanova_key,
+            "models": [os.getenv("SAMBANOVA_MODEL", "Meta-Llama-3.1-70B-Instruct")],
+        })
+
+    return providers
 
 _LLM_SEMAPHORE = threading.Semaphore(1)
 _LLM_LAST_CALL = 0.0
@@ -67,7 +79,8 @@ def _call_llm(messages: list[dict], temperature: float = 0.3, max_tokens: int = 
     """Call LLM with failover across providers. Returns text or None."""
     global _LLM_LAST_CALL
 
-    for provider in _PROVIDERS:
+    providers = _build_providers()
+    for provider in providers:
         _LLM_SEMAPHORE.acquire()
         try:
             with _LLM_LOCK:
@@ -150,7 +163,7 @@ Instrucciones:
 
 @router.post("/api/ai/explain", response_model=ExplainResponse)
 async def explain_inference(body: ExplainRequest):
-    if not _PROVIDERS:
+    if not _build_providers():
         raise HTTPException(status_code=503, detail="No hay providers LLM configurados. Verifica GROQ_API_KEY o GEMINI_API_KEY en el entorno.")
 
     inferred_text = "\n".join(body.inferred_facts) if body.inferred_facts else "(no se infirieron nuevos hechos)"
@@ -200,7 +213,7 @@ FACTS: <hechos de ejemplo, uno por línea>
 
 @router.post("/api/ai/translate-rule", response_model=TranslateRuleResponse)
 async def translate_rule(body: TranslateRuleRequest):
-    if not _PROVIDERS:
+    if not _build_providers():
         raise HTTPException(status_code=503, detail="No hay providers LLM configurados. Verifica GROQ_API_KEY o GEMINI_API_KEY en el entorno.")
 
     messages = [
@@ -227,3 +240,164 @@ async def translate_rule(body: TranslateRuleRequest):
         rule = text
 
     return TranslateRuleResponse(rule=rule, facts_example=facts_example)
+
+
+class SuggestInstrumentRequest(BaseModel):
+    policy_description: str = Field(..., description="Descripción de la política pública a monitorear")
+    population: str = Field(default="", description="Filtro opcional de población objetivo")
+
+
+class InstrumentVariable(BaseModel):
+    name: str
+    definition: str
+    suggested_question: str
+    response_options: dict[str, str]
+    classifier_standard: str = ""
+    population: str = ""
+    capture_method: str = ""
+    custodian: str = ""
+    custodian_department: str = ""
+    normative: str = ""
+    rationale: str = ""
+
+
+class SuggestInstrumentResponse(BaseModel):
+    variables: List[InstrumentVariable]
+    summary: str = ""
+    provider: str = ""
+
+
+_SUGGEST_INSTRUMENT_SYSTEM = """Eres un experto en diseño de instrumentos de captura de datos socioeconómicos.
+Tu tarea es, dada una descripción de política pública y un catálogo de conceptos disponibles,
+seleccionar las variables relevantes y generar un instrumento indicativo (codebook).
+
+Para cada variable seleccionada debes generar:
+1. Una pregunta sugerida en español, lista para usar en un formulario (Kobo/Google Forms).
+2. Las opciones de respuesta, tomadas EXCLUSIVAMENTE del clasificador del concepto.
+3. Una justificación breve de por qué esa variable es necesaria para la política descrita.
+
+Reglas estrictas:
+- NO inventes opciones de respuesta que no estén en el clasificador del concepto.
+- Si un concepto no tiene clasificador, indica "respuesta abierta" en las opciones.
+- NO incluyas variables que no estén en el catálogo proporcionado.
+- Prioriza variables que ya tienen estandarización (standard, classifier).
+- Máximo 15 variables por instrumento.
+- Responde en JSON válido con esta estructura:
+{
+  "variables": [
+    {
+      "name": "<nombre canónico del concepto>",
+      "suggested_question": "<pregunta en español>",
+      "rationale": "<por qué es relevante para esta política>"
+    }
+  ],
+  "summary": "<breve resumen del instrumento sugerido>"
+}
+"""
+
+
+@router.post("/api/ai/suggest-instrument", response_model=SuggestInstrumentResponse)
+async def suggest_instrument(body: SuggestInstrumentRequest):
+    if not _build_providers():
+        raise HTTPException(status_code=503, detail="No hay providers LLM configurados. Verifica GROQ_API_KEY o GEMINI_API_KEY en el entorno.")
+
+    from mcp.tools.nomenclador import get_agent
+    agent = get_agent()
+
+    concepts_data = agent.list_concepts()
+    if "error" in concepts_data:
+        raise HTTPException(status_code=504, detail=concepts_data["error"])
+
+    catalog_lines = []
+    for c in concepts_data.get("concepts", []):
+        line = f"- {c['name']}"
+        if c.get("standard"):
+            line += f" (estándar: {c['standard']})"
+        if c.get("definition") and c["definition"] != "-":
+            line += f": {c['definition']}"
+        catalog_lines.append(line)
+
+    catalog = "\n".join(catalog_lines)
+    pop_filter = f"\nPoblación objetivo: {body.population}" if body.population else ""
+
+    user_msg = f"""Descripción de la política pública:
+{body.policy_description}{pop_filter}
+
+Catálogo de conceptos disponibles en el nomenclador:
+{catalog}
+
+Selecciona las variables relevantes para monitorear esta política y genera el instrumento indicativo."""
+
+    messages = [
+        {"role": "system", "content": _SUGGEST_INSTRUMENT_SYSTEM},
+        {"role": "user", "content": user_msg},
+    ]
+
+    result = _call_llm(messages, temperature=0.3, max_tokens=3000)
+    if not result:
+        raise HTTPException(status_code=503, detail="El LLM no respondió. Intenta de nuevo.")
+
+    import json as _json
+
+    llm_output = result.strip()
+    if llm_output.startswith("```"):
+        llm_output = llm_output.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+
+    try:
+        parsed = _json.loads(llm_output)
+    except _json.JSONDecodeError:
+        start = llm_output.find("{")
+        end = llm_output.rfind("}") + 1
+        if start >= 0 and end > start:
+            try:
+                parsed = _json.loads(llm_output[start:end])
+            except _json.JSONDecodeError:
+                raise HTTPException(status_code=502, detail="El LLM no devolvió JSON válido.")
+        else:
+            raise HTTPException(status_code=502, detail="El LLM no devolvió JSON válido.")
+
+    variables: List[InstrumentVariable] = []
+    for var in parsed.get("variables", []):
+        concept_name = var.get("name", "")
+        concept_detail = agent.get_concept(concept_name)
+
+        response_options: dict[str, str] = {}
+        classifier_standard = ""
+        if "classifier" in concept_detail:
+            clf = concept_detail["classifier"]
+            classifier_standard = clf.get("standard", clf.get("name", ""))
+            response_options = clf.get("values", {})
+
+        variables.append(InstrumentVariable(
+            name=concept_name,
+            definition=concept_detail.get("definition", "-"),
+            suggested_question=var.get("suggested_question", ""),
+            response_options=response_options,
+            classifier_standard=classifier_standard,
+            population=concept_detail.get("population", "-"),
+            capture_method=concept_detail.get("capture_method", "-"),
+            custodian=concept_detail.get("custodian", "-"),
+            custodian_department=concept_detail.get("custodian_department", "-"),
+            normative=concept_detail.get("normative", "-"),
+            rationale=var.get("rationale", ""),
+        ))
+
+    return SuggestInstrumentResponse(
+        variables=variables,
+        summary=parsed.get("summary", ""),
+    )
+
+
+@router.get("/api/ai/status")
+async def ai_status():
+    """Check which LLM providers are configured."""
+    providers = _build_providers()
+    return {
+        "configured": len(providers) > 0,
+        "providers": [{"name": p["name"], "model": p["models"][0]} for p in providers],
+        "env_checked": {
+            "GROQ_API_KEY": bool(os.getenv("GROQ_API_KEY")),
+            "GEMINI_API_KEY": bool(os.getenv("GEMINI_API_KEY")),
+            "SAMBANOVA_API_KEY": bool(os.getenv("SAMBANOVA_API_KEY")),
+        },
+    }

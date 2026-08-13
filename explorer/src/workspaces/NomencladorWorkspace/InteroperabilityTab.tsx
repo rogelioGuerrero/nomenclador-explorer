@@ -96,7 +96,12 @@ export function InteroperabilityTab() {
         throw new Error(err.detail || "Error en la consulta");
       }
       const data = await res.json();
-      setInterop(data);
+      if (data.error) {
+        setError(data.error);
+        setInterop(null);
+      } else {
+        setInterop(data);
+      }
     } catch (e: any) {
       setError(e.message || "Error de conexión");
     } finally {
@@ -119,7 +124,12 @@ export function InteroperabilityTab() {
         throw new Error(err.detail || "Error en la consulta");
       }
       const data = await res.json();
-      setTransform(data);
+      if (data.error) {
+        setError(data.error);
+        setTransform(null);
+      } else {
+        setTransform(data);
+      }
     } catch (e: any) {
       setError(e.message || "Error de conexión");
     } finally {
@@ -182,8 +192,15 @@ export function InteroperabilityTab() {
         )}
       </div>
 
+      {/* No results message */}
+      {interop && interop.paths.length === 0 && (
+        <div className="ws-card" style={{ textAlign: "center", padding: 40, color: "var(--ws-text-muted)", fontSize: "14px" }}>
+          No se encontraron caminos de interoperabilidad entre las fuentes seleccionadas.
+        </div>
+      )}
+
       {/* Interop results */}
-      {interop && (
+      {interop && interop.paths.length > 0 && (
         <div className="ws-card">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
             <h3 style={{ margin: 0, fontSize: "15px", color: "var(--ws-text)" }}>
@@ -256,7 +273,7 @@ export function InteroperabilityTab() {
       )}
 
       {/* Transform results */}
-      {showTransform && transform && (
+      {showTransform && transform && transform.transforms && transform.transforms.length > 0 && (
         <div className="ws-card">
           <h3 style={{ margin: "0 0 16px 0", fontSize: "15px", color: "var(--ws-text)" }}>
             Transformaciones SQL + JSON Schema

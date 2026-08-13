@@ -5,11 +5,12 @@ import {
   BrainCircuit,
   Database,
   FileSearch,
-  GitMerge,
+  GitBranch,
   Network,
   Radar,
-  Route,
   Search,
+  Sparkles,
+  Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -64,7 +65,7 @@ const PREVIEW_DOTS = Array.from({ length: 42 }, (_, i) => ({
 }));
 
 const navItems: NavItem[] = [
-  { id: 'explore', label: 'Nomenclador', hint: 'Grafo y vocabulario', icon: Database },
+  { id: 'explore', label: 'Explorar', hint: 'Grafo y conceptos del nomenclador', icon: Database },
   { id: 'analyze', label: 'Analizar', hint: 'Consultas e inferencia', icon: FileSearch },
   { id: 'nomenclador', label: 'Gobernanza', hint: 'Interoperabilidad, calidad y validación', icon: Radar },
 ];
@@ -1446,7 +1447,7 @@ function WorkspaceShell({
 }
 
 function WorkspaceFallback() {
-  return <div className="workspace-loading">Loading workspace…</div>;
+  return <div className="workspace-loading">Cargando espacio de trabajo…</div>;
 }
 
 function getNumberStat(payload: GraphStatsPayload, keys: Array<keyof GraphStatsPayload>) {
@@ -1506,16 +1507,16 @@ function WelcomeScreen({
   }, []);
 
   const metrics: LandingMetric[] = [
-    { label: 'Knowledge nodes', value: formatMetric(stats.nodes, 'Live'), tone: 'cyan' },
-    { label: 'Relationships mapped', value: formatMetric(stats.edges, 'Ready'), tone: 'mint' },
-    { label: 'Graph modes', value: '3', tone: 'amber' },
-    { label: stats.ready ? 'Dataset online' : 'Ready to explore', value: stats.ready ? 'Active' : 'Standby', tone: 'rose' },
+    { label: 'Nodos de conocimiento', value: formatMetric(stats.nodes, 'Activo'), tone: 'cyan' },
+    { label: 'Relaciones mapeadas', value: formatMetric(stats.edges, 'Listo'), tone: 'mint' },
+    { label: 'Modos de grafo', value: '3', tone: 'amber' },
+    { label: stats.ready ? 'Dataset en línea' : 'Listo para explorar', value: stats.ready ? 'Activo' : 'En espera', tone: 'rose' },
   ];
 
   const secondaryLaunchers: LandingAction[] = [
     {
       label: 'Conceptos',
-      description: 'Browser de conceptos del nomenclador',
+      description: 'Explora conceptos, fuentes y clasificadores',
       icon: Database,
       onClick: onOpenVocabulary,
     },
@@ -1536,14 +1537,14 @@ function WelcomeScreen({
           <div className="landing-copy">
             <div className="landing-status-bar">
               <div className="landing-status-dot" />
-              <span className="landing-status-text">System Online</span>
+              <span className="landing-status-text">Sistema en línea</span>
               <div className="landing-status-divider" />
-              <span className="landing-status-version">Nomenclador Explorer · Accesibilidad Territorial</span>
+              <span className="landing-status-version">Explorador de Nomenclador · Accesibilidad Territorial</span>
             </div>
 
-            <div className="landing-kicker" aria-label="Product category">
+            <div className="landing-kicker" aria-label="Categoría del producto">
               <span className="landing-kicker-mark" aria-hidden="true" />
-              Nomenclador Explorer
+              Explorador de Nomenclador
             </div>
 
             <h1 className="landing-title">
@@ -1558,7 +1559,7 @@ function WelcomeScreen({
             <div className="landing-cta-row">
               <button className="landing-cta-primary" type="button" onClick={onOpenNetwork}>
                 <Network size={16} />
-                Abrir Nomenclador Explorer
+                Abrir Explorador
                 <ArrowRight size={15} />
               </button>
               <button className="landing-cta-secondary" type="button" onClick={onOpenReasoning}>
@@ -1569,20 +1570,20 @@ function WelcomeScreen({
           </div>
 
           {/* ── Preview panel ── */}
-          <div className="landing-preview" aria-label="Knowledge graph preview">
+          <div className="landing-preview" aria-label="Vista previa del grafo de conocimiento">
             <div className="landing-preview-topbar" aria-hidden="true">
               <div className="landing-preview-dot" />
               <div className="landing-preview-dot" />
               <div className="landing-preview-dot" />
-              <div className="landing-preview-tab">Nomenclador Explorer</div>
+              <div className="landing-preview-tab">Explorador de Nomenclador</div>
             </div>
             <div className="landing-command-card">
               <div className="landing-command-icon">
                 <Search size={15} />
               </div>
               <div>
-                <div className="landing-command-label">Search command, node, or concept</div>
-                <div className="landing-command-meta">distance heatmap · focused view · causal path</div>
+                <div className="landing-command-label">Buscar comando, nodo o concepto</div>
+                <div className="landing-command-meta">mapa de distancia · vista enfocada · camino causal</div>
               </div>
             </div>
             <div className="landing-preview-orbit">
@@ -1643,7 +1644,7 @@ function WelcomeScreen({
         </section>
 
         {/* ── Live metrics ── */}
-        <div className="landing-metrics" aria-label="System status">
+        <div className="landing-metrics" aria-label="Estado del sistema">
           {metrics.map((metric) => (
             <div key={metric.label} className="landing-metric" data-tone={metric.tone}>
               <div className="landing-metric-value">{metric.value}</div>
@@ -1653,16 +1654,16 @@ function WelcomeScreen({
         </div>
 
         {/* ── Workspace grid ── */}
-        <section aria-label="Workspaces">
+        <section aria-label="Espacios de trabajo">
           <div className="landing-section-header">
-            <h2 className="landing-section-title">Workspaces</h2>
+            <h2 className="landing-section-title">Espacios de trabajo</h2>
             <div className="landing-section-line" />
           </div>
           <div className="landing-workspace-grid">
             <button className="landing-workspace-card landing-workspace-card--primary" type="button" onClick={onOpenNetwork}>
               <div>
-                <div className="landing-workspace-card-eyebrow">Workspace Principal</div>
-                <div className="landing-workspace-card-title">Nomenclador Explorer</div>
+                <div className="landing-workspace-card-eyebrow">Espacio principal</div>
+                <div className="landing-workspace-card-title">Explorador de Nomenclador</div>
                 <div className="landing-workspace-card-desc">
                   Grafo completo, comunidades agrupadas, vecindarios enfocados y análisis de cercanía — todo en un canvas.
                 </div>
@@ -1693,13 +1694,14 @@ function WelcomeScreen({
         </section>
 
         {/* ── Capability band ── */}
-        <section className="landing-capability-band" aria-label="Intelligence capabilities">
+        <section className="landing-capability-band" aria-label="Capacidades de inteligencia">
           <div className="landing-capability-label">Capacidades</div>
-          <div className="landing-capability"><Radar size={12} />Mapa de cercanía</div>
-          <div className="landing-capability"><Network size={12} />Vecindario enfocado</div>
-          <div className="landing-capability"><GitMerge size={12} />Comunidades agrupadas</div>
-          <div className="landing-capability"><Route size={12} />Trazar caminos</div>
-          <div className="landing-capability"><Search size={12} />Búsqueda indexada</div>
+          <div className="landing-capability"><GitBranch size={12} />Proveniencia PROV-O</div>
+          <div className="landing-capability"><Network size={12} />Lineage visual</div>
+          <div className="landing-capability"><Sparkles size={12} />Instrumento indicativo</div>
+          <div className="landing-capability"><Workflow size={12} />Interoperabilidad</div>
+          <div className="landing-capability"><BrainCircuit size={12} />Razonamiento</div>
+          <div className="landing-capability"><Radar size={12} />Temporal</div>
         </section>
 
       </div>
@@ -1736,17 +1738,17 @@ export default function App() {
     if (activeWorkspace === 'explore') {
       return (
         <WorkspaceShell
-          title="Explore"
-          subtitle={exploreView === 'graph' ? undefined : "Browse nomenclador concepts, their sources, classifiers, and normative references."}
-          kicker={exploreView === 'graph' ? 'Graph Studio' : 'Concept Browser'}
+          title="Explorar"
+          subtitle={exploreView === 'graph' ? undefined : "Explora conceptos del nomenclador, sus fuentes, clasificadores y referencias normativas."}
+          kicker={exploreView === 'graph' ? 'Estudio de Grafo' : 'Explorador de Conceptos'}
           compact
           tabs={
             <>
               <button className="workspace-tab" data-active={exploreView === 'graph'} onClick={() => setExploreView('graph')}>
-                Nomenclador Explorer
+                Explorador de Nomenclador
               </button>
               <button className="workspace-tab" data-active={exploreView === 'concepts'} onClick={() => setExploreView('concepts')}>
-                Concept Browser
+                Explorador de Conceptos
               </button>
             </>
           }
@@ -1765,16 +1767,16 @@ export default function App() {
     if (activeWorkspace === 'analyze') {
       return (
         <WorkspaceShell
-          title="Analyze"
-          subtitle="Query the active graph and test inference rules."
-          kicker={analyzeView === 'reasoning' ? 'Reasoning Engine' : analyzeView === 'sparql' ? 'SPARQL Query' : 'PROV-O Lineage'}
+          title="Analizar"
+          subtitle="Consulta el grafo activo y prueba reglas de inferencia."
+          kicker={analyzeView === 'reasoning' ? 'Motor de Inferencia' : analyzeView === 'sparql' ? 'Consulta SPARQL' : 'Lineage PROV-O'}
           tabs={
             <>
               <button className="workspace-tab" data-active={analyzeView === 'reasoning'} onClick={() => setAnalyzeView('reasoning')}>
-                Reasoning Playground
+                Inferencia
               </button>
               <button className="workspace-tab" data-active={analyzeView === 'sparql'} onClick={() => setAnalyzeView('sparql')}>
-                SPARQL Querying
+                Consultas SPARQL
               </button>
               <button className="workspace-tab" data-active={analyzeView === 'lineage'} onClick={() => setAnalyzeView('lineage')}>
                 Lineage
@@ -1796,7 +1798,7 @@ export default function App() {
         <WorkspaceShell
           title="Gobernanza"
           subtitle="Interoperabilidad, calidad de datos y validación de campos."
-          kicker="Governance Agent"
+          kicker="Agente de Gobernanza"
         >
           <ErrorBoundary key="nomenclador">
             <Suspense fallback={<WorkspaceFallback />}>
@@ -1815,7 +1817,7 @@ export default function App() {
       <style>{shellStyles}</style>
       <div className="app-shell">
         <aside className="app-rail">
-          <button className="brand-pill" title="Nomenclador Explorer" onClick={() => setActiveWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>NE</button>
+          <button className="brand-pill" title="Explorador de Nomenclador" onClick={() => setActiveWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>NE</button>
           {navItems.map(({ id, label, hint, icon: Icon }) => (
             <button
               key={id}

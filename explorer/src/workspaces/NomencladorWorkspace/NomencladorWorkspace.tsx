@@ -5,16 +5,18 @@ import { ClassifiersTab } from "./ClassifiersTab";
 import { ValidatorTab } from "./ValidatorTab";
 import { InsightsTab } from "./InsightsTab";
 import { ReferencesTab } from "./ReferencesTab";
+import { InstrumentoTab } from "./InstrumentoTab";
 
-type TabId = "interop" | "issues" | "classifiers" | "validator" | "insights" | "references";
+type TabId = "interop" | "issues" | "classifiers" | "validator" | "insights" | "references" | "instrument";
 
 const TABS: { id: TabId; label: string; hint: string }[] = [
   { id: "interop", label: "Interoperabilidad", hint: "Comparar fuentes y generar transformaciones" },
-  { id: "issues", label: "Quality Issues", hint: "Problemas de calidad detectados" },
+  { id: "issues", label: "Problemas de Calidad", hint: "Problemas de calidad detectados" },
   { id: "classifiers", label: "Clasificadores", hint: "Estándares y valores canónicos" },
   { id: "validator", label: "Validador", hint: "Validar valores contra estándares" },
-  { id: "insights", label: "Insights", hint: "Observaciones del análisis de fuentes" },
+  { id: "insights", label: "Observaciones", hint: "Observaciones del análisis de fuentes" },
   { id: "references", label: "Referencias", hint: "Corpus normativo y RAG documental" },
+  { id: "instrument", label: "Instrumento", hint: "Generar codebook indicativo desde política pública" },
 ];
 
 export function NomencladorWorkspace() {
@@ -54,6 +56,7 @@ export function NomencladorWorkspace() {
         {activeTab === "validator" && <ValidatorTab />}
         {activeTab === "insights" && <InsightsTab />}
         {activeTab === "references" && <ReferencesTab />}
+        {activeTab === "instrument" && <InstrumentoTab />}
       </div>
     </div>
   );

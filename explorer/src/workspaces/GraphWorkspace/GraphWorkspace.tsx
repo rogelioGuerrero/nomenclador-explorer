@@ -2404,7 +2404,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
         title: entry.label,
         placement: "bottom" as const,
         order: entry.order,
-        content: <div style={pluginLoadingStyle}>Loading {entry.label.toLowerCase()}…</div>,
+        content: <div style={pluginLoadingStyle}>Cargando {entry.label.toLowerCase()}…</div>,
       })),
     [loadedPlugins, pluginPanelState, pluginRegistry],
   );
@@ -2787,7 +2787,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
 
               {egoModeEnabled && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 12, color: "#a0b4cc" }}>
-                  <span style={{ fontWeight: 600, color: "#79c0ff" }}>Ego depth:</span>
+                  <span style={{ fontWeight: 600, color: "#79c0ff" }}>Profundidad ego:</span>
                   <input
                     type="range"
                     min={1}
@@ -2795,9 +2795,9 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
                     value={egoMaxHops}
                     onChange={(e) => setEgoMaxHops(Number(e.target.value))}
                     style={{ width: 90, accentColor: "#79c0ff" }}
-                    title={`Ego depth: ${egoMaxHops} hops`}
+                    title={`Profundidad ego: ${egoMaxHops} saltos`}
                   />
-                  <span style={{ fontFamily: "monospace", color: "#e6f2ff" }}>{egoMaxHops} hop{egoMaxHops !== 1 ? "s" : ""}</span>
+                  <span style={{ fontFamily: "monospace", color: "#e6f2ff" }}>{egoMaxHops} salto{egoMaxHops !== 1 ? "s" : ""}</span>
                 </div>
               )}
 
@@ -2805,23 +2805,23 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
                 <div style={distanceStatusStripStyle}>
                   <div style={distanceStatusTitleStyle}>
                     <Activity size={14} aria-hidden />
-                    <span>Distance Intelligence</span>
+                    <span>Inteligencia de distancia</span>
                     <span style={distanceModeBadgeStyle}>{distanceVisualState.mode}</span>
                   </div>
                   <div style={distanceStatusMetaStyle}>
                     {distanceVisualState.anchorLabel ? (
-                      <span>Anchor: <strong>{distanceVisualState.anchorLabel}</strong></span>
+                      <span>Ancla: <strong>{distanceVisualState.anchorLabel}</strong></span>
                     ) : null}
                     {distanceVisualState.mode === "semantic" ? (
                       <span>
                         {distanceVisualState.status === "loading"
-                          ? "Loading semantic neighborhood..."
-                          : `${distanceVisualState.semanticNeighborCount ?? 0} semantic neighbors`}
+                          ? "Cargando vecindario semántico..."
+                          : `${distanceVisualState.semanticNeighborCount ?? 0} vecinos semánticos`}
                       </span>
                     ) : distanceVisualState.mode === "heatmap" ? (
                       <span>{heatmapDistanceSummary}</span>
                     ) : (
-                      <span>{distanceReachableCount.toLocaleString()} nodes within {distanceVisualState.maxHops} hops</span>
+                      <span>{distanceReachableCount.toLocaleString()} nodos en {distanceVisualState.maxHops} saltos</span>
                     )}
                     {distanceVisualState.status === "unavailable" || distanceVisualState.status === "error" ? (
                       <span style={{ color: GRAPH_THEME.ui.control.dangerText }}>{distanceVisualState.error}</span>
@@ -2891,23 +2891,23 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
                   </div>
 
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <MetricChip tone="warm">weight {selectedEdgeState.weight.toFixed(2)}</MetricChip>
+                    <MetricChip tone="warm">peso {selectedEdgeState.weight.toFixed(2)}</MetricChip>
                     {selectedEdgeState.isAggregated ? (
                       <MetricChip tone="success">
-                        {selectedEdgeState.aggregateCount} bundled edge{selectedEdgeState.aggregateCount === 1 ? "" : "s"}
+                        {selectedEdgeState.aggregateCount} arista{selectedEdgeState.aggregateCount === 1 ? "" : "s"} agrupada{selectedEdgeState.aggregateCount === 1 ? "" : "s"}
                       </MetricChip>
                     ) : (
-                      <MetricChip>{selectedEdgeState.siblingCount} parallel lane{selectedEdgeState.siblingCount === 1 ? "" : "s"}</MetricChip>
+                      <MetricChip>{selectedEdgeState.siblingCount} carril{selectedEdgeState.siblingCount === 1 ? "" : "es"} paralelo{selectedEdgeState.siblingCount === 1 ? "" : "s"}</MetricChip>
                     )}
-                    <MetricChip>{selectedEdgeState.familySize} family member{selectedEdgeState.familySize === 1 ? "" : "s"}</MetricChip>
+                    <MetricChip>{selectedEdgeState.familySize} miembro{selectedEdgeState.familySize === 1 ? "" : "s"} de familia</MetricChip>
                     {selectedEdgeState.bundleKind ? (
-                      <MetricChip>{selectedEdgeState.bundleKind} bundle</MetricChip>
+                      <MetricChip>{selectedEdgeState.bundleKind} agrupación</MetricChip>
                     ) : null}
                     {selectedEdgeState.dominantEdgeType ? (
                       <MetricChip>{selectedEdgeState.dominantEdgeType}</MetricChip>
                     ) : null}
                     {selectedEdgeState.provenanceCount > 0 ? (
-                      <MetricChip>{selectedEdgeState.provenanceCount} provenance fields</MetricChip>
+                      <MetricChip>{selectedEdgeState.provenanceCount} campos de proveniencia</MetricChip>
                     ) : null}
                   </div>
 
@@ -2990,7 +2990,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
               ) : null}
 
               <div className="explore-scene-footer">
-                <Suspense fallback={<div style={timelineFallbackStyle}>Loading timeline…</div>}>
+                <Suspense fallback={<div style={timelineFallbackStyle}>Cargando línea de tiempo…</div>}>
                   <LazyTimelinePanel
                     onTimeChange={onTimeChange}
                     minDate={temporalBounds?.min ?? undefined}
@@ -3005,7 +3005,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
             <div className="explore-inspector-shell">
               <InspectorPanel open={layoutState.showInspector} className="explore-inspector-card">
                 <div className="explore-inspector-scroll hud-scrollbar">
-                  <Suspense fallback={<div style={inspectorFallbackStyle}>Loading inspector…</div>}>
+                  <Suspense fallback={<div style={inspectorFallbackStyle}>Cargando inspector…</div>}>
                     <LazyGraphInspectorPanel
                       nodeId={selectedNodeId}
                       inspectableNodeId={inspectableNodeId || null}

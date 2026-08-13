@@ -133,7 +133,7 @@ export function SparqlWorkspace() {
         {/* ── Toolbar ── */}
         <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--ws-border)", display: "flex", alignItems: "center", gap: 8, flexShrink: 0, background: "rgba(0,0,0,0.18)" }}>
           <div style={{ display: "flex", gap: 6, flex: 1, flexWrap: "wrap" }}>
-            <span className="ws-eyebrow" style={{ alignSelf: "center", marginRight: 4 }}>Templates:</span>
+            <span className="ws-eyebrow" style={{ alignSelf: "center", marginRight: 4 }}>Plantillas:</span>
             {TEMPLATES.map((t) => (
               <button
                 key={t.label}
@@ -145,8 +145,8 @@ export function SparqlWorkspace() {
               </button>
             ))}
           </div>
-          <button className="ws-btn ws-btn--ghost" style={{ padding: "6px 10px" }} onClick={handleCopyQuery} title="Copy query">
-            <Copy size={13} />{copyState ? "Copied!" : "Copy"}
+          <button className="ws-btn ws-btn--ghost" style={{ padding: "6px 10px" }} onClick={handleCopyQuery} title="Copiar consulta">
+            <Copy size={13} />{copyState ? "Copiado" : "Copiar"}
           </button>
           <button
             className="ws-btn ws-btn--primary"
@@ -155,8 +155,8 @@ export function SparqlWorkspace() {
             style={{ minWidth: 110, justifyContent: "center" }}
           >
             {isLoading
-              ? <><span className="ws-spin" style={{ display: "inline-block" }}><Play size={13} /></span>Running…</>
-              : <><Play size={13} />Run Query</>}
+              ? <><span className="ws-spin" style={{ display: "inline-block" }}><Play size={13} /></span>Ejecutando…</>
+              : <><Play size={13} />Ejecutar consulta</>}
           </button>
         </div>
 
@@ -193,12 +193,12 @@ export function SparqlWorkspace() {
             <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--ws-border)", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, color: "var(--ws-text-muted)", fontSize: 13, fontWeight: 700 }}>
                 <Table2 size={14} />
-                Results
-                {result?.rows && <span className="ws-pill ws-pill--accent">{result.rows.length} rows</span>}
+                Resultados
+                {result?.rows && <span className="ws-pill ws-pill--accent">{result.rows.length} filas</span>}
               </div>
               {result?.rows && result.rows.length > 0 && (
                 <button className="ws-btn ws-btn--ghost" style={{ marginLeft: "auto", padding: "4px 10px", fontSize: 11 }} onClick={handleExportCSV}>
-                  <Download size={12} />Export CSV
+                  <Download size={12} />Exportar CSV
                 </button>
               )}
             </div>
@@ -221,8 +221,8 @@ export function SparqlWorkspace() {
                 <div className="ws-animate-in" style={{ overflowX: "auto" }}>
                   {result.rows.length === 0 ? (
                     <div className="ws-empty">
-                      <div className="ws-empty-title">No results</div>
-                      <div className="ws-empty-body">The query returned 0 rows. Try a broader query or check your data.</div>
+                      <div className="ws-empty-title">Sin resultados</div>
+                      <div className="ws-empty-body">La consulta devolvió 0 filas. Prueba una consulta más amplia o verifica tus datos.</div>
                     </div>
                   ) : (
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, color: "var(--ws-text)" }}>
@@ -244,7 +244,7 @@ export function SparqlWorkspace() {
                                   String(r[c]).startsWith("urn:") || String(r[c]).startsWith("http")
                                     ? <span style={{ color: "#7ee787" }}>{String(r[c])}</span>
                                     : String(r[c])
-                                ) : <span style={{ color: "var(--ws-text-dim)", fontStyle: "italic" }}>null</span>}
+                                ) : <span style={{ color: "var(--ws-text-dim)", fontStyle: "italic" }}>vacío</span>}
                               </td>
                             ))}
                           </tr>
@@ -258,8 +258,8 @@ export function SparqlWorkspace() {
               {!result && !isLoading && (
                 <div className="ws-empty">
                   <div className="ws-empty-icon"><Table2 size={28} /></div>
-                  <div className="ws-empty-title">Run a query</div>
-                  <div className="ws-empty-body">Write SPARQL above or pick a template, then click Run Query to see results here.</div>
+                  <div className="ws-empty-title">Ejecuta una consulta</div>
+                  <div className="ws-empty-body">Escribe SPARQL arriba o elige una plantilla, luego haz clic en Ejecutar consulta para ver los resultados aquí.</div>
                 </div>
               )}
             </div>
