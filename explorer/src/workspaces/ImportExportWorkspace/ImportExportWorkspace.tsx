@@ -58,12 +58,12 @@ export function ImportExportWorkspace() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `semantica_export.${exportFormat}`;
+      a.download = `nomenclador_export.${exportFormat}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      showToast("success", `Export ready — semantica_export.${exportFormat}`);
+      showToast("success", `Export ready — nomenclador_export.${exportFormat}`);
       logEvent("export", `Exported graph as ${exportFormat.toUpperCase()}`, { format: exportFormat });
     } catch (e: unknown) {
       showToast("error", e instanceof Error ? e.message : "Export failed");

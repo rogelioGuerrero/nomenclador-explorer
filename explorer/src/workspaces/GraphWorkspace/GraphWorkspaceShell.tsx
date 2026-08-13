@@ -653,7 +653,7 @@ export function GraphWorkspaceShell() {
         <div className="graph-shell-top">
           <section className="graph-status-card">
             <div className="graph-status-label">Graph Studio</div>
-            <div className="graph-status-title">{visibleSelectedNode ? visibleSelectedNode.label : "Knowledge Explorer"}</div>
+            <div className="graph-status-title">{visibleSelectedNode ? visibleSelectedNode.label : "Nomenclador Explorer"}</div>
             <div className="graph-status-metrics">
               {showLoadingOverlay && loadingProgress ? <span style={{ ...metricPillStyle, color: "#a9ddff" }}>{getGraphLoadTitle(loadingProgress.phase)}</span> : null}
               {layoutStatusLabel ? <span style={{ ...metricPillStyle, color: "#a9ddff" }}>{layoutStatusLabel}</span> : null}
