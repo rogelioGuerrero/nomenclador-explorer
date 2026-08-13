@@ -3,24 +3,26 @@ import { useQueryClient } from "@tanstack/react-query";
 import { BrainCircuit, Play, RotateCcw, CheckCircle2, AlertCircle, Zap, GitBranch, Info } from "lucide-react";
 
 const SAMPLE_FACTS = `deriva_de(area_cultivada, area_agricola)
-compone(area_agricola, uso_de_suelo)
-clasifica(iso_5218, sexo)`;
+compone(area_agricola, uso_de_suelo)`;
 
 const SAMPLE_RULE = `IF deriva_de(?X, ?Y) AND compone(?Y, ?Z) THEN deriva_de(?X, ?Z)`;
 
 const TEMPLATES = [
   {
-    label: "Derivación transitiva",
+    label: "Propagar derivación",
+    description: "Si A deriva de B y B compone a C, entonces A deriva de C. Útil para descubrir dependencias indirectas entre variables.",
     facts: `deriva_de(area_cultivada, area_agricola)\ncompone(area_agricola, uso_de_suelo)`,
     rule: `IF deriva_de(?X, ?Y) AND compone(?Y, ?Z) THEN deriva_de(?X, ?Z)`,
   },
   {
-    label: "Equivalencia semántica",
+    label: "Heredar equivalencia",
+    description: "Si un campo A es equivalente a B, y B deriva de un concepto C, entonces A también deriva de C. Útil para sincronizar fuentes equivalentes.",
     facts: `equivalente_a(field:us_economic_indicators.date, field:ministerio_economia_sv.fecha_observacion)\nderiva_de(field:ministerio_economia_sv.fecha_observacion, concepto:tiempo)`,
     rule: `IF equivalente_a(?A, ?B) AND deriva_de(?B, ?C) THEN deriva_de(?A, ?C)`,
   },
   {
-    label: "Clasificador → Concepto",
+    label: "Propagar clasificador",
+    description: "Si un campo implementa un concepto que usa un clasificador, el campo también hereda ese clasificador. Útil para validar consistencia.",
     facts: `usa_clasificador(concepto:sexo, classifier:iso_5218)\nimplementa(field:b.genero, concepto:sexo)`,
     rule: `IF implementa(?F, ?C) AND usa_clasificador(?C, ?K) THEN usa_clasificador(?F, ?K)`,
   },
@@ -100,11 +102,12 @@ export function ReasoningWorkspace() {
 
         {/* Templates */}
         <div style={{ padding: "12px 16px 10px", borderBottom: "1px solid var(--ws-border)", flexShrink: 0 }}>
-          <div className="ws-eyebrow" style={{ marginBottom: 8 }}>Quick Templates</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div className="ws-eyebrow" style={{ marginBottom: 8 }}>Plantillas de inferencia</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {TEMPLATES.map((t) => (
-              <button key={t.label} className="ws-btn ws-btn--ghost" style={{ padding: "5px 10px", fontSize: 11 }} onClick={() => loadTemplate(t)}>
-                {t.label}
+              <button key={t.label} className="ws-btn ws-btn--ghost" style={{ padding: "8px 12px", fontSize: 12, textAlign: "left", display: "flex", flexDirection: "column", gap: 3, alignItems: "flex-start" }} onClick={() => loadTemplate(t)}>
+                <span style={{ fontWeight: 600 }}>{t.label}</span>
+                <span style={{ fontSize: 10, color: "var(--ws-text-dim)", lineHeight: 1.4 }}>{t.description}</span>
               </button>
             ))}
           </div>
@@ -113,8 +116,8 @@ export function ReasoningWorkspace() {
         {/* Input area */}
         <div className="ws-scroll ws-padded" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
-            <label className="ws-label">Facts</label>
-            <div className="ws-body" style={{ marginBottom: 8 }}>One fact per line using <code style={{ color: "var(--ws-accent)", fontSize: 11 }}>predicate(subject, object)</code> form.</div>
+            <label className="ws-label">Hechos</label>
+            <div className="ws-body" style={{ marginBottom: 8 }}>Un hecho por línea usando el formato <code style={{ color: "var(--ws-accent)", fontSize: 11 }}>predicado(sujeto, objeto)</code>.</div>
             <textarea
               className="ws-textarea"
               value={facts}
@@ -125,8 +128,8 @@ export function ReasoningWorkspace() {
           </div>
 
           <div>
-            <label className="ws-label">Rules</label>
-            <div className="ws-body" style={{ marginBottom: 8 }}>Use <code style={{ color: "var(--ws-amber)", fontSize: 11 }}>IF … AND … THEN …</code> syntax. Falls back to internal matcher if the reasoning server is unavailable.</div>
+            <label className="ws-label">Reglas</label>
+            <div className="ws-body" style={{ marginBottom: 8 }}>Usa la sintaxis <code style={{ color: "var(--ws-amber)", fontSize: 11 }}>IF … AND … THEN …</code> con variables prefijadas con <code style={{ color: "var(--ws-amber)", fontSize: 11 }}>?</code>.</div>
             <textarea
               className="ws-textarea"
               value={rules}
@@ -149,8 +152,8 @@ export function ReasoningWorkspace() {
               <div style={{ position: "absolute", top: 3, left: applyToGraph ? 19 : 3, width: 14, height: 14, borderRadius: 999, background: "#fff", transition: "left 180ms ease", boxShadow: "0 1px 4px rgba(0,0,0,0.4)" }} />
             </div>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: applyToGraph ? "#6ee7b7" : "var(--ws-text-muted)" }}>Write inferred facts to graph</div>
-              <div style={{ fontSize: 11, color: "var(--ws-text-dim)" }}>Inferred binary facts are added as edges</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: applyToGraph ? "#6ee7b7" : "var(--ws-text-muted)" }}>Escribir hechos inferidos al grafo</div>
+              <div style={{ fontSize: 11, color: "var(--ws-text-dim)" }}>Los hechos binarios inferidos se añaden como aristas</div>
             </div>
           </label>
 
@@ -163,10 +166,10 @@ export function ReasoningWorkspace() {
               style={{ flex: 1, justifyContent: "center" }}
             >
               {isRunning
-                ? <><span className="ws-spin" style={{ display: "inline-block" }}><Zap size={15} /></span>Running…</>
-                : <><Play size={14} />Run Reasoning</>}
+                ?<><span className="ws-spin" style={{ display: "inline-block" }}><Zap size={15} /></span>Ejecutando…</>
+                : <><Play size={14} />Ejecutar inferencia</>}
             </button>
-            <button className="ws-btn ws-btn--ghost" onClick={handleReset} title="Reset to defaults">
+            <button className="ws-btn ws-btn--ghost" onClick={handleReset} title="Restablecer valores por defecto">
               <RotateCcw size={14} />
             </button>
           </div>
@@ -176,18 +179,18 @@ export function ReasoningWorkspace() {
       {/* ── Right: Results panel ── */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ padding: "18px 24px 14px", borderBottom: "1px solid var(--ws-border)", flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ws-text)" }}>Inference Results</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--ws-text)" }}>Resultados de inferencia</div>
           {result && !isRunning && (
             <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
               <span className="ws-pill ws-pill--accent">
-                <Zap size={9} /> {result.rules_fired ?? 0} rules fired
+                <Zap size={9} /> {result.rules_fired ?? 0} reglas activadas
               </span>
               <span className="ws-pill ws-pill--green">
-                <GitBranch size={9} /> {result.added_edges ?? 0} edges added
+                <GitBranch size={9} /> {result.added_edges ?? 0} aristas añadidas
               </span>
               {result.mutated
-                ? <span className="ws-pill ws-pill--green">graph updated</span>
-                : <span className="ws-pill ws-pill--mono">preview only</span>}
+                ? <span className="ws-pill ws-pill--green">grafo actualizado</span>
+                : <span className="ws-pill ws-pill--mono">solo vista previa</span>}
             </div>
           )}
         </div>
@@ -211,8 +214,8 @@ export function ReasoningWorkspace() {
               {(result.inferred_facts ?? []).length === 0 ? (
                 <div className="ws-empty">
                   <div className="ws-empty-icon"><CheckCircle2 size={32} /></div>
-                  <div className="ws-empty-title">Reasoning complete</div>
-                  <div className="ws-empty-body">No new facts were inferred from the current rule set and facts.</div>
+                  <div className="ws-empty-title">Inferencia completada</div>
+                  <div className="ws-empty-body">No se infirieron nuevos hechos a partir de las reglas y hechos actuales.</div>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -232,8 +235,8 @@ export function ReasoningWorkspace() {
           {!result && !isRunning && !error && (
             <div className="ws-empty">
               <div className="ws-empty-icon"><Info size={32} /></div>
-              <div className="ws-empty-title">Ready to reason</div>
-              <div className="ws-empty-body">Enter facts and rules on the left, then click Run Reasoning to see inferred statements here.</div>
+              <div className="ws-empty-title">Listo para inferir</div>
+              <div className="ws-empty-body">Ingresa hechos y reglas a la izquierda, luego haz clic en Ejecutar inferencia para ver los resultados aquí.</div>
             </div>
           )}
         </div>
