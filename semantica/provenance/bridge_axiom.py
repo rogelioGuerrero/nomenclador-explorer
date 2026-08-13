@@ -280,7 +280,7 @@ class TranslationChain:
             "type": layer_type,
             "value": value,
             "source": source,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             **kwargs
         }
         self.layers.append(layer)

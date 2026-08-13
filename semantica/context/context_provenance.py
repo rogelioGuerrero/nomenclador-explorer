@@ -44,9 +44,9 @@ class ContextManagerWithProvenance:
 
     def add_context(self, context: Any, source: Optional[str] = None, **kwargs):
         """Add context with provenance tracking."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         result = self._context_manager.add_context(context, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance and self._prov_manager:
             self._prov_manager.track_entity(

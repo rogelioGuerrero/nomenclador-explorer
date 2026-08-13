@@ -43,9 +43,9 @@ class OntologyManagerWithProvenance:
 
     def add_concept(self, concept: Any, source: str = None, **kwargs):
         """Add concept with provenance tracking."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         result = self._manager.add_concept(concept, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance and self._prov_manager:
             self._prov_manager.track_entity(

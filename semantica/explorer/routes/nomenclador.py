@@ -69,8 +69,8 @@ async def search_variable(name: str = Query(..., description="Variable name to s
     """Search for a variable by name across all sources."""
     agent = _get_agent()
     result = agent.search_variable(name)
-    if result is None:
-        raise HTTPException(status_code=404, detail=f"Variable '{name}' not found")
+    if isinstance(result, dict) and "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     return result
 
 
@@ -79,8 +79,8 @@ async def get_concept(name: str):
     """Get full detail for a canonical concept."""
     agent = _get_agent()
     result = agent.get_concept(name)
-    if result is None:
-        raise HTTPException(status_code=404, detail=f"Concept '{name}' not found")
+    if isinstance(result, dict) and "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     return result
 
 
@@ -110,8 +110,8 @@ async def get_classifier(standard_id: str):
     """Get classifier details by standard ID."""
     agent = _get_agent()
     result = agent.get_classifier(standard_id)
-    if result is None:
-        raise HTTPException(status_code=404, detail=f"Classifier '{standard_id}' not found")
+    if isinstance(result, dict) and "error" in result:
+        raise HTTPException(status_code=404, detail=result["error"])
     return result
 
 

@@ -45,9 +45,9 @@ class DeduplicatorWithProvenance:
 
     def deduplicate(self, items: List[Any], source: str = None, **kwargs):
         """Deduplicate items with provenance tracking."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         unique_items = self._deduplicator.deduplicate(items, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance and self._prov_manager:
             duplicates_found = len(items) - len(unique_items)

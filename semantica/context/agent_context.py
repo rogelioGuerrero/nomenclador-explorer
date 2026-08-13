@@ -71,7 +71,7 @@ Production Use Cases:
     - Legal: Case precedent analysis, decision consistency
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from ..utils.helpers import classify_path_distance
@@ -1938,11 +1938,11 @@ class AgentContext:
     def _capture_checkpoint_state(self) -> Dict[str, Any]:
         """Capture a serializable snapshot of the current graph state."""
         if self.knowledge_graph and hasattr(self.knowledge_graph, "state_at"):
-            return self.knowledge_graph.state_at(datetime.utcnow())
+            return self.knowledge_graph.state_at(datetime.now(timezone.utc).replace(tzinfo=None))
         if self.knowledge_graph and hasattr(self.knowledge_graph, "to_dict"):
             graph_dict = self.knowledge_graph.to_dict()
             return {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
                 "nodes": graph_dict.get("nodes", []),
                 "edges": graph_dict.get("edges", []),
                 "entities": graph_dict.get("nodes", []),
@@ -1958,7 +1958,7 @@ class AgentContext:
                 ],
             }
         return {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             "nodes": [],
             "edges": [],
             "entities": [],

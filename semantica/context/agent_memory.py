@@ -141,9 +141,9 @@ class MemoryItem:
         """Reconstruct a MemoryItem from a serialised dict."""
         raw_ts = data.get("timestamp")
         try:
-            ts = datetime.fromisoformat(raw_ts) if raw_ts else datetime.utcnow()
+            ts = datetime.fromisoformat(raw_ts) if raw_ts else datetime.now(timezone.utc).replace(tzinfo=None)
         except (ValueError, TypeError):
-            ts = datetime.utcnow()
+            ts = datetime.now(timezone.utc).replace(tzinfo=None)
         return cls(
             content=data.get("content", ""),
             timestamp=ts,

@@ -40,6 +40,13 @@ class NomencladorAgent:
         self._graph: Any = None
         self._lock = threading.Lock()
         self._path: Optional[str] = None
+        self._indices_built = False
+        self._concepts_by_name: dict[str, str] = {}
+        self._fields_by_concept: dict[str, list[dict]] = {}
+        self._classifier_by_concept: dict[str, Optional[dict]] = {}
+        self._all_classifiers: dict[str, dict] = {}
+        self._fields_by_source_db: dict[str, list[dict]] = {}
+        self._concepts_by_field: dict[str, str] = {}
 
     # ------------------------------------------------------------------
     # Graph management
@@ -53,6 +60,8 @@ class NomencladorAgent:
                 data = json.load(f)
             self._graph = nx.node_link_graph(data, directed=True, edges="links")
             self._path = path
+            self._indices_built = False
+            self._build_indices()
             log.info(
                 "Nomenclador graph loaded: %d nodes, %d edges",
                 self._graph.number_of_nodes(),
@@ -75,87 +84,112 @@ class NomencladorAgent:
         with self._lock:
             self._graph = None
             self._path = None
+            self._indices_built = False
+            self._concepts_by_name.clear()
+            self._fields_by_concept.clear()
+            self._classifier_by_concept.clear()
+            self._all_classifiers.clear()
+            self._fields_by_source_db.clear()
+            self._concepts_by_field.clear()
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _ensure_indices(self) -> None:
+        """Build lookup indices lazily if not yet built."""
+        if not self._indices_built:
+            self._build_indices()
+
+    def _build_indices(self) -> None:
+        """Build O(1) lookup indices from the graph nodes and edges."""
+        g = self.get_graph()
+        self._concepts_by_name.clear()
+        self._fields_by_concept.clear()
+        self._classifier_by_concept.clear()
+        self._all_classifiers.clear()
+        self._fields_by_source_db.clear()
+        self._concepts_by_field.clear()
+
+        for node_id, data in g.nodes(data=True):
+            node_type = data.get("type")
+            if node_type == "concept":
+                name_lower = str(data.get("name", "")).lower()
+                if name_lower:
+                    self._concepts_by_name[name_lower] = node_id
+            elif node_type == "classifier":
+                std = data.get("standard", data.get("name", node_id))
+                self._all_classifiers[std] = {"id": node_id, **data}
+            elif node_type == "field":
+                src = data.get("source_db", "")
+                if src:
+                    self._fields_by_source_db.setdefault(src, []).append({"id": node_id, **data})
+
+        for source, target, edge_data in g.edges(data=True):
+            edge_type = edge_data.get("type")
+            if edge_type == "implementa":
+                field_data = g.nodes[source]
+                self._fields_by_concept.setdefault(target, []).append({"id": source, **field_data})
+                self._concepts_by_field[source] = target
+            elif edge_type == "usa_clasificador":
+                classifier_data = g.nodes[target]
+                self._classifier_by_concept[source] = {"id": target, **classifier_data}
+
+        self._indices_built = True
+
     def _find_concept_by_name(self, name: str) -> Optional[dict]:
         """Find a concept node by name (case-insensitive)."""
+        self._ensure_indices()
+        node_id = self._concepts_by_name.get(name.lower())
+        if node_id is None:
+            return None
         g = self.get_graph()
-        target = name.lower()
-        for node_id, data in g.nodes(data=True):
-            if data.get("type") == "concept" and str(data.get("name", "")).lower() == target:
-                return {"id": node_id, **data}
-        return None
+        data = g.nodes[node_id]
+        return {"id": node_id, **data}
 
     def _find_fields_of_concept(self, concept_id: str) -> list[dict]:
         """Find all field nodes that implement a concept."""
-        g = self.get_graph()
-        fields = []
-        for source, target, edge_data in g.edges(data=True):
-            if target == concept_id and edge_data.get("type") == "implementa":
-                node_data = g.nodes[source]
-                fields.append({"id": source, **node_data})
-        return fields
+        self._ensure_indices()
+        return list(self._fields_by_concept.get(concept_id, []))
 
     def _find_classifier_of_concept(self, concept_id: str) -> Optional[dict]:
         """Find the classifier linked to a concept via usa_clasificador."""
-        g = self.get_graph()
-        for source, target, edge_data in g.edges(data=True):
-            if source == concept_id and edge_data.get("type") == "usa_clasificador":
-                node_data = g.nodes[target]
-                return {"id": target, **node_data}
-        return None
+        self._ensure_indices()
+        return self._classifier_by_concept.get(concept_id)
 
     def _find_all_classifiers(self) -> dict[str, dict]:
         """Return all classifier nodes keyed by standard id."""
-        g = self.get_graph()
-        result = {}
-        for node_id, data in g.nodes(data=True):
-            if data.get("type") == "classifier":
-                std = data.get("standard", data.get("name", node_id))
-                result[std] = {"id": node_id, **data}
-        return result
+        self._ensure_indices()
+        return dict(self._all_classifiers)
 
     def _find_interoperability_paths(self, source_db: str, target_db: str) -> list[dict]:
         """Find all concept paths connecting two sources."""
-        g = self.get_graph()
+        self._ensure_indices()
 
-        # Find fields of each source
-        source_fields = []
-        target_fields = []
-        for node_id, data in g.nodes(data=True):
-            if data.get("type") == "field":
-                field_source = data.get("source_db", "")
-                if field_source == source_db:
-                    source_fields.append({"id": node_id, **data})
-                elif field_source == target_db:
-                    target_fields.append({"id": node_id, **data})
+        source_fields = list(self._fields_by_source_db.get(source_db, []))
+        target_fields = list(self._fields_by_source_db.get(target_db, []))
 
         if not source_fields or not target_fields:
             return []
 
-        # Map fields to concepts via implementa edges
+        # Map fields to concepts via the reverse index
         source_concepts: dict[str, list[dict]] = {}
-        for s, t, ed in g.edges(data=True):
-            if ed.get("type") == "implementa":
-                field_data = g.nodes[s]
-                if field_data.get("source_db") == source_db:
-                    source_concepts.setdefault(t, []).append({"id": s, **field_data})
+        for field in source_fields:
+            concept_id = self._concepts_by_field.get(field["id"])
+            if concept_id:
+                source_concepts.setdefault(concept_id, []).append(field)
 
         target_concepts: dict[str, list[dict]] = {}
-        for s, t, ed in g.edges(data=True):
-            if ed.get("type") == "implementa":
-                field_data = g.nodes[s]
-                if field_data.get("source_db") == target_db:
-                    target_concepts.setdefault(t, []).append({"id": s, **field_data})
+        for field in target_fields:
+            concept_id = self._concepts_by_field.get(field["id"])
+            if concept_id:
+                target_concepts.setdefault(concept_id, []).append(field)
 
         # Find shared concepts
         results = []
         shared = set(source_concepts.keys()) & set(target_concepts.keys())
         for concept_id in shared:
-            concept_data = g.nodes[concept_id]
+            concept_data = self.get_graph().nodes[concept_id]
             classifier = self._find_classifier_of_concept(concept_id)
             for field_a in source_concepts[concept_id]:
                 for field_b in target_concepts[concept_id]:

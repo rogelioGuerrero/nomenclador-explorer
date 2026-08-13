@@ -45,9 +45,9 @@ class ReasoningEngineWithProvenance:
 
     def infer(self, premises: Any, source: str = None, **kwargs):
         """Perform inference with provenance tracking."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         result = self._engine.infer(premises, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance and self._prov_manager:
             self._prov_manager.track_entity(

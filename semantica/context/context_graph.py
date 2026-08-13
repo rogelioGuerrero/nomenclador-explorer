@@ -318,7 +318,7 @@ class ContextNode:
         """
         if self.valid_from is None and self.valid_until is None:
             return True
-        now = at_time if at_time is not None else datetime.utcnow()
+        now = at_time if at_time is not None else datetime.now(timezone.utc).replace(tzinfo=None)
         if now.tzinfo is not None:
             now = now.astimezone(timezone.utc).replace(tzinfo=None)
         start = _parse_iso_dt(self.valid_from) if self.valid_from is not None else None
@@ -381,7 +381,7 @@ class ContextEdge:
         """
         if self.valid_from is None and self.valid_until is None:
             return True
-        now = at_time if at_time is not None else datetime.utcnow()
+        now = at_time if at_time is not None else datetime.now(timezone.utc).replace(tzinfo=None)
         if now.tzinfo is not None:
             now = now.astimezone(timezone.utc).replace(tzinfo=None)
         start = _parse_iso_dt(self.valid_from) if self.valid_from is not None else None
@@ -1212,7 +1212,7 @@ class ContextGraph:
         limit: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """Find active nodes lazily."""
-        now = at_time or datetime.utcnow()
+        now = at_time or datetime.now(timezone.utc).replace(tzinfo=None)
         with self._lock:
             if node_type:
                 raw_ids = sorted(
@@ -2120,7 +2120,7 @@ class ContextGraph:
             target_id=target_decision_id,
             edge_type=relationship_type,
             weight=1.0,
-            metadata={"recorded_at": datetime.utcnow().isoformat()},
+            metadata={"recorded_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat()},
         )
         self._add_internal_edge(edge)
 
@@ -2644,7 +2644,7 @@ class ContextGraph:
             "entities": entities,
             "decision_maker": decision_maker,
             "timestamp": timestamp,
-            "recorded_at": datetime.utcnow().isoformat(),
+            "recorded_at": datetime.now(timezone.utc).replace(tzinfo=None).isoformat(),
             "valid_from": normalized_valid_from,
             "valid_until": normalized_valid_until,
             "metadata": metadata or {},
@@ -3117,7 +3117,7 @@ class ContextGraph:
         """Return True when a decision matches temporal filter rules."""
         valid_from = _parse_iso_dt(decision.get("valid_from")) if decision.get("valid_from") else None
         valid_until = _parse_iso_dt(decision.get("valid_until")) if decision.get("valid_until") else None
-        reference_time = as_of or datetime.utcnow()
+        reference_time = as_of or datetime.now(timezone.utc).replace(tzinfo=None)
 
         if as_of is not None:
             if valid_from is not None and reference_time < valid_from:

@@ -44,7 +44,7 @@ class SourceTrackerWithUnifiedBackend:
 
     def track_property_source(self, entity_id: str, property_name: str, value: Any, source: Any, **metadata):
         """Track property source with unified backend."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         if self._use_unified:
             from semantica.provenance import SourceReference
 
@@ -59,7 +59,7 @@ class SourceTrackerWithUnifiedBackend:
             metadata.setdefault("agent_type", "software_agent")
             metadata.setdefault("is_automated", self._is_automated)
             metadata.setdefault("activity_started_at_time", activity_started_at_time)
-            metadata.setdefault("activity_ended_at_time", datetime.utcnow().isoformat())
+            metadata.setdefault("activity_ended_at_time", datetime.now(timezone.utc).replace(tzinfo=None).isoformat())
 
             self._unified_manager.track_property_source(
                 entity_id=entity_id,

@@ -60,9 +60,9 @@ class PDFIngestorWithProvenance(IngestProvenanceMixin):
 
     def ingest(self, file_path: str, **kwargs):
         """Ingest PDF with provenance tracking."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         docs = self._ingestor.ingest(file_path, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance and self._prov_manager:
             for doc in docs:

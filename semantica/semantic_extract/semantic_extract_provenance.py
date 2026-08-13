@@ -157,9 +157,9 @@ class NERExtractorWithProvenance(ProvenanceMixin):
         Returns:
             List of extracted entities (same as original NERExtractor)
         """
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         entities = self._extractor.extract(text, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance:
             for entity in entities:
@@ -231,9 +231,9 @@ class RelationExtractorWithProvenance(ProvenanceMixin):
         Returns:
             List of extracted relations
         """
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         relations = self._extractor.extract(text, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance:
             for relation in relations:
@@ -304,9 +304,9 @@ class EventDetectorWithProvenance(ProvenanceMixin):
         Returns:
             List of detected events
         """
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         events = self._detector.detect(text, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance:
             for event in events:
@@ -376,9 +376,9 @@ class CoreferenceResolverWithProvenance(ProvenanceMixin):
         Returns:
             Coreference chains
         """
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         chains = self._resolver.resolve(text, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance:
             for chain in chains:
@@ -446,9 +446,9 @@ class TripletExtractorWithProvenance(ProvenanceMixin):
         Returns:
             List of extracted triplets
         """
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         triplets = self._extractor.extract(text, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance:
             for triplet in triplets:

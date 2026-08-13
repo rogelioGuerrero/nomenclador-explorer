@@ -91,7 +91,7 @@ class ProvenanceEntry:
     source_quote: Optional[str] = None
 
     # Temporal tracking (from kg.ProvenanceTracker)
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None).isoformat())
     first_seen: Optional[str] = None
     last_updated: Optional[str] = None
 

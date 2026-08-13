@@ -1,5 +1,5 @@
 {
-  "name": "semantica-knowledge-explorer",
+  "name": "nomenclador-explorer",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -24,7 +24,6 @@
     "graphology-metrics": "^2.4.0",
     "graphology-shortest-path": "^2.1.0",
     "lucide-react": "^1.7.0",
-    "playwright": "^1.59.1",
     "react": "^19.2.4",
     "react-arborist": "^3.4.3",
     "react-dom": "^19.2.4",
@@ -46,6 +45,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "playwright": "^1.59.1",
     "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",

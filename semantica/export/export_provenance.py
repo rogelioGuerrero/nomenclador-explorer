@@ -45,9 +45,9 @@ class ExporterWithProvenance:
 
     def export(self, data: Any, destination: str, **kwargs):
         """Export data with provenance tracking."""
-        activity_started_at_time = datetime.utcnow().isoformat()
+        activity_started_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
         result = self._exporter.export(data, destination, **kwargs)
-        activity_ended_at_time = datetime.utcnow().isoformat()
+        activity_ended_at_time = datetime.now(timezone.utc).replace(tzinfo=None).isoformat()
 
         if self.provenance and self._prov_manager:
             self._prov_manager.track_entity(

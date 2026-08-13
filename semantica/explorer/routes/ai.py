@@ -9,9 +9,10 @@ Uses the same LLM providers as governance-agent (Groq, Gemini, SambaNova)
 via env vars. Self-contained — no dependency on governance-agent code.
 """
 
+import asyncio
 import os
 import time
-import threading
+import logging
 from pathlib import Path
 from typing import List, Optional
 
@@ -69,26 +70,25 @@ def _build_providers() -> list[dict]:
 
     return providers
 
-_LLM_SEMAPHORE = threading.Semaphore(1)
+_LLM_SEMAPHORE = asyncio.Semaphore(1)
 _LLM_LAST_CALL = 0.0
-_LLM_LOCK = threading.Lock()
 _LLM_MIN_DELAY = float(os.getenv("LLM_MIN_DELAY", "2.0"))
 
+logger = logging.getLogger(__name__)
 
-def _call_llm(messages: list[dict], temperature: float = 0.3, max_tokens: int = 2000, timeout: int = 45) -> Optional[str]:
+
+async def _call_llm(messages: list[dict], temperature: float = 0.3, max_tokens: int = 2000, timeout: int = 45) -> Optional[str]:
     """Call LLM with failover across providers. Returns text or None."""
     global _LLM_LAST_CALL
 
     providers = _build_providers()
     for provider in providers:
-        _LLM_SEMAPHORE.acquire()
-        try:
-            with _LLM_LOCK:
-                elapsed = time.monotonic() - _LLM_LAST_CALL
-                wait = _LLM_MIN_DELAY - elapsed
-                if wait > 0:
-                    time.sleep(wait)
-                _LLM_LAST_CALL = time.monotonic()
+        async with _LLM_SEMAPHORE:
+            elapsed = time.monotonic() - _LLM_LAST_CALL
+            wait = _LLM_MIN_DELAY - elapsed
+            if wait > 0:
+                await asyncio.sleep(wait)
+            _LLM_LAST_CALL = time.monotonic()
 
             headers = {
                 "Authorization": f"Bearer {provider['key']}",
@@ -100,20 +100,21 @@ def _call_llm(messages: list[dict], temperature: float = 0.3, max_tokens: int = 
                 "temperature": temperature,
                 "max_tokens": max_tokens,
             }
-            with httpx.Client(timeout=timeout) as client:
-                resp = client.post(provider["url"], headers=headers, json=body)
+            try:
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    resp = await client.post(provider["url"], headers=headers, json=body)
+            except Exception as exc:
+                logger.warning("LLM provider %s failed: %s", provider["name"], exc)
+                continue
 
             if resp.status_code >= 400:
+                logger.warning("LLM provider %s returned %d", provider["name"], resp.status_code)
                 continue
 
             data = resp.json()
             content = data["choices"][0]["message"].get("content", "")
             if content:
                 return content
-        except Exception:
-            continue
-        finally:
-            _LLM_SEMAPHORE.release()
 
     return None
 
@@ -184,7 +185,7 @@ Explica estos resultados en español claro para un humano no técnico."""
         {"role": "user", "content": user_msg},
     ]
 
-    result = _call_llm(messages, temperature=0.3, max_tokens=1500)
+    result = await _call_llm(messages, temperature=0.3, max_tokens=1500)
     if not result:
         raise HTTPException(status_code=503, detail="El LLM no respondió. Intenta de nuevo.")
 
@@ -221,7 +222,7 @@ async def translate_rule(body: TranslateRuleRequest):
         {"role": "user", "content": f"Traduce esta descripción a una regla de inferencia:\n\n{body.description}"},
     ]
 
-    result = _call_llm(messages, temperature=0.2, max_tokens=1000)
+    result = await _call_llm(messages, temperature=0.2, max_tokens=1000)
     if not result:
         raise HTTPException(status_code=503, detail="El LLM no respondió. Intenta de nuevo.")
 
@@ -333,7 +334,7 @@ Selecciona las variables relevantes para monitorear esta política y genera el i
         {"role": "user", "content": user_msg},
     ]
 
-    result = _call_llm(messages, temperature=0.3, max_tokens=3000)
+    result = await _call_llm(messages, temperature=0.3, max_tokens=3000)
     if not result:
         raise HTTPException(status_code=503, detail="El LLM no respondió. Intenta de nuevo.")
 

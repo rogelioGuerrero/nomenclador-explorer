@@ -204,8 +204,12 @@ class SemanticaMCPServer:
 
 
 def _write(obj: Any) -> None:
-    sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
-    sys.stdout.flush()
+    try:
+        sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+    except (BrokenPipeError, OSError):
+        log.info("Client disconnected — exiting MCP server")
+        sys.exit(0)
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
-# Semantica MCP Server
+# Nomenclador MCP Server
 
-A fully modular [Model Context Protocol](https://modelcontextprotocol.io/) server for the Semantica knowledge graph.  
-Connects Claude Code, Cursor, Windsurf, Cline, Continue, VS Code (GitHub Copilot), and any other MCP-compatible AI tool directly to your Semantica graph.
+A fully modular [Model Context Protocol](https://modelcontextprotocol.io/) server for the Nomenclador Explorer knowledge graph.  
+Connects Claude Code, Cursor, Windsurf, Cline, Continue, VS Code (GitHub Copilot), and any other MCP-compatible AI tool directly to your nomenclador graph.
 
 ---
 
@@ -30,7 +30,7 @@ python -m mcp [--debug]
 
 ---
 
-## Tools (17 total)
+## Tools (24 total)
 
 ### Extraction
 
@@ -73,6 +73,18 @@ python -m mcp [--debug]
 |---|---|
 | `export_graph` | Export graph to JSON, CSV, GraphML, Parquet, Turtle, N-Triples, RDF/XML, JSON-LD |
 | `get_provenance` | Audit history and source lineage for a node |
+
+### Nomenclador Governance
+
+| Tool | Description |
+|---|---|
+| `list_concepts` | List all canonical concepts with standards, definitions, and sources |
+| `search_variable` | Search for a variable by name; returns concept and all physical sources |
+| `get_concept` | Get full detail of a concept including classifier values and normative |
+| `check_interoperability` | Check interoperability between two sources with semantic guardrails |
+| `get_transform` | Generate SQL CASE WHEN + JSON Schema transforms between two sources |
+| `validate_field` | Validate if a field's sample values match a canonical standard |
+| `get_classifier` | Get valid values of a classifier/standard from the nomenclador graph |
 
 ---
 
@@ -235,7 +247,8 @@ mcp/
 │   ├── decisions.py     # Record, query, precedents, causal chain, impact
 │   ├── graph.py         # Add entity/relationship, search, summary, analytics
 │   ├── reasoning.py     # Forward-chaining rules, abductive hypotheses
-│   └── export.py        # Graph export (multi-format) + provenance
+│   ├── export.py        # Graph export (multi-format) + provenance
+│   └── nomenclador.py   # Concept lookup, interoperability, transforms, classifiers
 └── resources/
     ├── __init__.py      # Re-exports RESOURCE_DEFINITIONS + handle_resource_read
     └── registry.py      # URI → handler map for the 4 semantica:// resources
