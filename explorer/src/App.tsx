@@ -53,6 +53,8 @@ type GraphStatsPayload = {
   edgeCount?: number;
   nodes?: number;
   edges?: number;
+  classifiers?: number;
+  classifier_count?: number;
 };
 
 const queryClient = new QueryClient();
@@ -1468,14 +1470,17 @@ function WelcomeScreen({
   onOpenNetwork,
   onOpenVocabulary,
   onOpenReasoning,
+  onOpenNomenclador,
 }: {
   onOpenNetwork: () => void;
   onOpenVocabulary: () => void;
   onOpenReasoning: () => void;
+  onOpenNomenclador: () => void;
 }) {
-  const [stats, setStats] = useState<{ nodes: number | null; edges: number | null; ready: boolean }>({
+  const [stats, setStats] = useState<{ nodes: number | null; edges: number | null; classifiers: number | null; ready: boolean }>({
     nodes: null,
     edges: null,
+    classifiers: null,
     ready: false,
   });
 
@@ -1493,6 +1498,7 @@ function WelcomeScreen({
         setStats({
           nodes: getNumberStat(payload, ['node_count', 'nodeCount', 'nodes']),
           edges: getNumberStat(payload, ['edge_count', 'edgeCount', 'edges']),
+          classifiers: getNumberStat(payload, ['classifiers', 'classifier_count']),
           ready: true,
         });
       })
@@ -1509,7 +1515,7 @@ function WelcomeScreen({
   const metrics: LandingMetric[] = [
     { label: 'Nodos de conocimiento', value: formatMetric(stats.nodes, 'Activo'), tone: 'cyan' },
     { label: 'Relaciones mapeadas', value: formatMetric(stats.edges, 'Listo'), tone: 'mint' },
-    { label: 'Modos de grafo', value: '3', tone: 'amber' },
+    { label: 'Clasificadores', value: formatMetric(stats.classifiers ?? 0, 'Estándar'), tone: 'amber' },
     { label: stats.ready ? 'Dataset en línea' : 'Listo para explorar', value: stats.ready ? 'Activo' : 'En espera', tone: 'rose' },
   ];
 
@@ -1522,9 +1528,15 @@ function WelcomeScreen({
     },
     {
       label: 'Analizar',
-      description: 'Inferencia y consultas',
+      description: 'Inferencia, consultas SPARQL y lineage PROV-O',
       icon: BrainCircuit,
       onClick: onOpenReasoning,
+    },
+    {
+      label: 'Gobernanza',
+      description: 'Interoperabilidad, calidad, validación e instrumentos',
+      icon: Radar,
+      onClick: onOpenNomenclador,
     },
   ];
 
@@ -1549,11 +1561,11 @@ function WelcomeScreen({
 
             <h1 className="landing-title">
               Explora el nomenclador<br />
-              como un <span>sistema vivo.</span>
+              como un <span>sistema conectado.</span>
             </h1>
             <p className="landing-subtitle">
-              Visualiza variables, fuentes, clasificadores y normativas del nomenclador
-              en un grafo interactivo con búsqueda, caminos y análisis de cercanía.
+              Variables, fuentes, clasificadores y normativas conectados en un grafo interactivo.
+              Trazar origen y lineage de los datos, medir distancia semántica entre conceptos y generar instrumentos de captura desde la política pública.
             </p>
 
             <div className="landing-cta-row">
@@ -1583,7 +1595,7 @@ function WelcomeScreen({
               </div>
               <div>
                 <div className="landing-command-label">Buscar comando, nodo o concepto</div>
-                <div className="landing-command-meta">mapa de distancia · vista enfocada · camino causal</div>
+                <div className="landing-command-meta">distancia semántica · lineage · instrumento de captura</div>
               </div>
             </div>
             <div className="landing-preview-orbit">
@@ -1623,16 +1635,16 @@ function WelcomeScreen({
               </svg>
             </div>
             <div className="landing-dossier-card">
-              <div className="landing-dossier-kicker">Entity Dossier</div>
+              <div className="landing-dossier-kicker">Ficha de variable</div>
               <div className="landing-dossier-title">Variable</div>
-              <div className="landing-dossier-row"><span>Distance band</span><strong>Near</strong></div>
-              <div className="landing-dossier-row"><span>Path coherence</span><strong>0.84</strong></div>
-              <div className="landing-dossier-row"><span>Provenance</span><strong>Audited</strong></div>
+              <div className="landing-dossier-row"><span>Banda de distancia</span><strong>Cercana</strong></div>
+              <div className="landing-dossier-row"><span>Coherencia de camino</span><strong>0.84</strong></div>
+              <div className="landing-dossier-row"><span>Origen</span><strong>Auditado</strong></div>
             </div>
             <div className="landing-timeline-card">
               <div className="landing-timeline-header">
-                <span className="landing-timeline-title">Temporal Evidence</span>
-                <span className="landing-timeline-badge">66% coverage</span>
+                <span className="landing-timeline-title">Evidencia temporal</span>
+                <span className="landing-timeline-badge">66% cobertura</span>
               </div>
               <div className="landing-timeline-track" />
               <div className="landing-timeline-labels">
@@ -1665,7 +1677,7 @@ function WelcomeScreen({
                 <div className="landing-workspace-card-eyebrow">Espacio principal</div>
                 <div className="landing-workspace-card-title">Explorador de Nomenclador</div>
                 <div className="landing-workspace-card-desc">
-                  Grafo completo, comunidades agrupadas, vecindarios enfocados y análisis de cercanía — todo en un canvas.
+                  Grafo interactivo con distancia semántica, origen y lineage de variables, y filtrado temporal por snapshot histórica.
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -1730,6 +1742,9 @@ export default function App() {
           onOpenReasoning={() => {
             setActiveWorkspace('analyze');
             setAnalyzeView('reasoning');
+          }}
+          onOpenNomenclador={() => {
+            setActiveWorkspace('nomenclador');
           }}
         />
       );
