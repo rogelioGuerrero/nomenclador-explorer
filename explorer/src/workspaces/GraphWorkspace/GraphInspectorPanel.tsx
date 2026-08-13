@@ -434,7 +434,7 @@ export function GraphInspectorPanel({
         <input
           value={predictionType}
           onChange={(event) => onPredictionTypeChange(event.target.value)}
-          placeholder="Optional candidate type filter, e.g. disease"
+          placeholder="Filtro de tipo opcional, ej. Concept"
           style={inputStyle}
         />
       </section>

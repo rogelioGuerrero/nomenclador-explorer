@@ -2,27 +2,27 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BrainCircuit, Play, RotateCcw, CheckCircle2, AlertCircle, Zap, GitBranch, Info } from "lucide-react";
 
-const SAMPLE_FACTS = `inhibits(Metformin, mTOR)
-causes(mTOR, Neurodegeneration)
-treats(Metformin, Diabetes)`;
+const SAMPLE_FACTS = `deriva_de(area_cultivada, area_agricola)
+compone(area_agricola, uso_de_suelo)
+clasifica(iso_5218, sexo)`;
 
-const SAMPLE_RULE = `IF inhibits(Metformin, mTOR) AND causes(mTOR, Neurodegeneration) THEN candidate(Metformin, Alzheimer's)`;
+const SAMPLE_RULE = `IF deriva_de(?X, ?Y) AND compone(?Y, ?Z) THEN deriva_de(?X, ?Z)`;
 
 const TEMPLATES = [
   {
-    label: "Drug Candidate",
-    facts: `inhibits(Metformin, mTOR)\ncauses(mTOR, Neurodegeneration)\ntreats(Metformin, Diabetes)`,
-    rule: `IF inhibits(Metformin, mTOR) AND causes(mTOR, Neurodegeneration) THEN candidate(Metformin, Alzheimer's)`,
+    label: "Derivación transitiva",
+    facts: `deriva_de(area_cultivada, area_agricola)\ncompone(area_agricola, uso_de_suelo)`,
+    rule: `IF deriva_de(?X, ?Y) AND compone(?Y, ?Z) THEN deriva_de(?X, ?Z)`,
   },
   {
-    label: "Gene → Disease",
-    facts: `expressed_in(BRCA1, Breast)\nmutated_in(BRCA1, Cancer)\nassociated_with(Breast, Cancer)`,
-    rule: `IF mutated_in(X, Cancer) AND expressed_in(X, Y) THEN risk_gene(X, Y)`,
+    label: "Equivalencia semántica",
+    facts: `equivalente_a(field:us_economic_indicators.date, field:ministerio_economia_sv.fecha_observacion)\nderiva_de(field:ministerio_economia_sv.fecha_observacion, concepto:tiempo)`,
+    rule: `IF equivalente_a(?A, ?B) AND deriva_de(?B, ?C) THEN deriva_de(?A, ?C)`,
   },
   {
-    label: "Pathway Activation",
-    facts: `activates(EGF, EGFR)\ndownstream_of(MAPK, EGFR)\ndownstream_of(AKT, EGFR)`,
-    rule: `IF activates(X, EGFR) AND downstream_of(Y, EGFR) THEN activates(X, Y)`,
+    label: "Clasificador → Concepto",
+    facts: `usa_clasificador(concepto:sexo, classifier:iso_5218)\nimplementa(field:b.genero, concepto:sexo)`,
+    rule: `IF implementa(?F, ?C) AND usa_clasificador(?C, ?K) THEN usa_clasificador(?F, ?K)`,
   },
 ];
 

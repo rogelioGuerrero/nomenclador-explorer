@@ -233,7 +233,7 @@ function NodePanel({
             <button style={secondaryActionButtonStyle} onClick={() => onDownloadProvenance("markdown")}>Provenance MD</button>
           </div>
         </div>
-        <input value={predictionType} onChange={(event) => onPredictionTypeChange(event.target.value)} placeholder="Optional candidate type filter, e.g. disease" style={inputStyle} />
+        <input value={predictionType} onChange={(event) => onPredictionTypeChange(event.target.value)} placeholder="Filtro de tipo opcional, ej. Concept" style={inputStyle} />
       </section>
 
       <section style={sectionStyle}>
@@ -698,7 +698,7 @@ export function GraphWorkspaceShell() {
                       void handleSearch();
                     }
                   }}
-                  placeholder="Search a node, e.g. Metformin"
+                  placeholder="Buscar nodo, ej. area_cultivada"
                   style={{ ...inputStyle, minWidth: 260 }}
                   disabled={showLoadingOverlay && !selectedNodeId}
                 />

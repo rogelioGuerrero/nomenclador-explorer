@@ -594,7 +594,7 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
           <Textarea
             value={schemaText}
             onChange={setSchemaText}
-            placeholder="Describe the ontology you need. E.g.: I need an ontology for a hospital domain with patients, doctors, appointments, and medications."
+            placeholder="Describe la ontología que necesitas. Ej.: Necesito una ontología para un nomenclador de indicadores socioeconómicos con conceptos, fuentes, campos y clasificadores."
             rows={6}
           />
         </FieldGroup>
