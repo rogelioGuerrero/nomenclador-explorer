@@ -73,6 +73,7 @@ const navItems: NavItem[] = [
 ];
 
 function WorkspaceShell({
+  title,
   subtitle,
   tabs,
   compact = false,
@@ -126,11 +127,15 @@ function WelcomeScreen({
   onOpenVocabulary,
   onOpenReasoning,
   onOpenNomenclador,
+  onOpenLineage,
+  onOpenSparql,
 }: {
   onOpenNetwork: () => void;
   onOpenVocabulary: () => void;
   onOpenReasoning: () => void;
   onOpenNomenclador: () => void;
+  onOpenLineage: () => void;
+  onOpenSparql: () => void;
 }) {
   const [stats, setStats] = useState<{ nodes: number | null; edges: number | null; classifiers: number | null; ready: boolean }>({
     nodes: null,
@@ -362,12 +367,12 @@ function WelcomeScreen({
         {/* ── Capability band ── */}
         <section className="landing-capability-band" aria-label="Capacidades de inteligencia">
           <div className="landing-capability-label">Capacidades</div>
-          <div className="landing-capability"><GitBranch size={12} />Proveniencia PROV-O</div>
-          <div className="landing-capability"><Network size={12} />Lineage visual</div>
-          <div className="landing-capability"><Sparkles size={12} />Instrumento indicativo</div>
-          <div className="landing-capability"><Workflow size={12} />Interoperabilidad</div>
-          <div className="landing-capability"><BrainCircuit size={12} />Razonamiento</div>
-          <div className="landing-capability"><Radar size={12} />Temporal</div>
+          <button className="landing-capability" type="button" onClick={onOpenLineage}><GitBranch size={12} />Trazar origen de datos</button>
+          <button className="landing-capability" type="button" onClick={onOpenNomenclador}><Sparkles size={12} />Generar instrumento de captura</button>
+          <button className="landing-capability" type="button" onClick={onOpenNomenclador}><Workflow size={12} />Comparar entre fuentes</button>
+          <button className="landing-capability" type="button" onClick={onOpenReasoning}><BrainCircuit size={12} />Inferencia lógica</button>
+          <button className="landing-capability" type="button" onClick={onOpenSparql}><Search size={12} />Consultas avanzadas</button>
+          <button className="landing-capability" type="button" onClick={onOpenNetwork}><Radar size={12} />Evolución temporal</button>
         </section>
 
       </div>
@@ -399,6 +404,14 @@ export default function App() {
           }}
           onOpenNomenclador={() => {
             setActiveWorkspace('nomenclador');
+          }}
+          onOpenLineage={() => {
+            setActiveWorkspace('analyze');
+            setAnalyzeView('lineage');
+          }}
+          onOpenSparql={() => {
+            setActiveWorkspace('analyze');
+            setAnalyzeView('sparql');
           }}
         />
       );
