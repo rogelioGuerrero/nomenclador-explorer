@@ -10,22 +10,29 @@ type SourceInfo = {
   review_status: string;
 };
 
-type PreviewColumn = {
+type GovColumn = {
   name: string;
   data_type: string;
-  null_count: number;
+  nullable: boolean;
   total_count: number;
+  null_count: number;
   unique_count: number;
-  completeness: number;
-  uniqueness: number;
   sample_values: string[];
+  min_value: string | null;
+  max_value: string | null;
+  inferred_standard: { name: string; standard: string; confidence: string; reason: string } | null;
+};
+
+type GovTable = {
+  name: string;
+  row_count: number;
+  columns: GovColumn[];
 };
 
 type PreviewResult = {
   filename: string;
-  row_count: number;
-  column_count: number;
-  columns: PreviewColumn[];
+  table_count: number;
+  tables: GovTable[];
 };
 
 export function IngerirFuenteTab() {
@@ -63,7 +70,7 @@ export function IngerirFuenteTab() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/nomenclador/sources/preview", {
+      const res = await fetch("/api/governance/profiler/csv", {
         method: "POST",
         body: formData,
       });
@@ -214,7 +221,7 @@ export function IngerirFuenteTab() {
                 {preview.filename}
               </span>
               <span style={{ fontSize: 11, color: "var(--ws-text-dim)" }}>
-                {preview.row_count} filas · {preview.column_count} columnas
+                {preview.tables[0]?.row_count ?? 0} filas · {preview.tables[0]?.columns.length ?? 0} columnas
               </span>
               <button
                 onClick={handleCancelPreview}
@@ -249,32 +256,40 @@ export function IngerirFuenteTab() {
                   <tr style={{ borderBottom: "1px solid var(--ws-border)" }}>
                     <th style={{ textAlign: "left", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Columna</th>
                     <th style={{ textAlign: "left", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Tipo</th>
-                    <th style={{ textAlign: "right", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Completitud</th>
-                    <th style={{ textAlign: "right", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Unicidad</th>
                     <th style={{ textAlign: "right", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Nulos</th>
+                    <th style={{ textAlign: "right", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Únicos</th>
+                    <th style={{ textAlign: "left", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Estándar</th>
                     <th style={{ textAlign: "left", padding: "6px 10px", color: "var(--ws-text-dim)", fontWeight: 600, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>Muestras</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {preview.columns.map((col, i) => {
-                    const compPct = Math.round(col.completeness * 100);
-                    const uniqPct = Math.round(col.uniqueness * 100);
+                  {(preview.tables[0]?.columns ?? []).map((col, i) => {
+                    const compPct = col.total_count > 0 ? Math.round((1 - col.null_count / col.total_count) * 100) : 0;
                     const compColor = compPct >= 90 ? "var(--ws-green)" : compPct >= 60 ? "var(--ws-amber)" : "var(--ws-red)";
+                    const std = col.inferred_standard;
                     return (
                       <tr key={i} style={{ borderBottom: "1px solid var(--ws-border)" }}>
                         <td style={{ padding: "6px 10px", color: "var(--ws-text)", fontWeight: 600 }}>{col.name}</td>
                         <td style={{ padding: "6px 10px" }}>
                           <span style={{
                             fontSize: 10, padding: "1px 6px", borderRadius: 4, fontWeight: 600,
-                            background: col.data_type === "number" ? "rgba(99,102,241,0.12)" : col.data_type === "date" ? "rgba(72,209,204,0.12)" : "rgba(96,112,136,0.12)",
-                            color: col.data_type === "number" ? "#a78bfa" : col.data_type === "date" ? "#48d1cc" : "var(--ws-text-muted)",
+                            background: col.data_type === "integer" || col.data_type === "float" ? "rgba(99,102,241,0.12)" : col.data_type === "date" ? "rgba(72,209,204,0.12)" : "rgba(96,112,136,0.12)",
+                            color: col.data_type === "integer" || col.data_type === "float" ? "#a78bfa" : col.data_type === "date" ? "#48d1cc" : "var(--ws-text-muted)",
                           }}>
                             {col.data_type}
                           </span>
                         </td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", color: compColor, fontWeight: 600 }}>{compPct}%</td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", color: "var(--ws-text-muted)" }}>{uniqPct}%</td>
-                        <td style={{ padding: "6px 10px", textAlign: "right", color: col.null_count > 0 ? "var(--ws-amber)" : "var(--ws-text-dim)" }}>{col.null_count}</td>
+                        <td style={{ padding: "6px 10px", textAlign: "right", color: compColor, fontWeight: 600 }}>{col.null_count}/{col.total_count}</td>
+                        <td style={{ padding: "6px 10px", textAlign: "right", color: "var(--ws-text-muted)" }}>{col.unique_count}</td>
+                        <td style={{ padding: "6px 10px", fontSize: 10 }}>
+                          {std ? (
+                            <span style={{ color: std.confidence === "high" ? "var(--ws-green)" : "var(--ws-amber)", fontWeight: 600 }}>
+                              {std.standard}
+                            </span>
+                          ) : (
+                            <span style={{ color: "var(--ws-text-dim)" }}>—</span>
+                          )}
+                        </td>
                         <td style={{ padding: "6px 10px", color: "var(--ws-text-dim)", fontSize: 10, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {col.sample_values.join(", ")}
                         </td>
