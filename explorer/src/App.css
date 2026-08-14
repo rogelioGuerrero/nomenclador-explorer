@@ -15,7 +15,7 @@
   --ws-border: rgba(74,163,255,0.13);
   --ws-border-strong: rgba(74,163,255,0.26);
   --ws-text: #ddeeff;
-  --ws-text-muted: #5a7a9a;
+  --ws-text-muted: #8fa8c6;
   --ws-text-dim: #3a5570;
   --ws-accent: #4aa3ff;
   --ws-accent-soft: rgba(74,163,255,0.12);
@@ -645,7 +645,7 @@
 }
 
 .landing-status-version {
-  color: #5a7a9a;
+  color: var(--ws-text-muted);
   font: 600 11px/1 "JetBrains Mono", monospace;
   letter-spacing: 0.06em;
 }
@@ -1193,7 +1193,7 @@
   height: 28px;
   padding: 0 10px;
   border-radius: 999px;
-  color: #5a7a9a;
+  color: var(--ws-text-muted);
   background: rgba(74, 163, 255, 0.05);
   border: 1px solid rgba(74, 163, 255, 0.12);
   font-size: 11px;

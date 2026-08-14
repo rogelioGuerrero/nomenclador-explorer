@@ -414,3 +414,19 @@ async def merge_nodes(
     if removed_ids:
         await asyncio.to_thread(session.rebuild_search_index)
     return MergeResponse(merged_into=primary_id, removed_ids=removed_ids, edges_updated=edges_updated)
+
+
+@router.get("/api/reason/inferred-edges")
+async def list_inferred_edges(session: GraphSession = Depends(get_session)):
+    """List all inferred edges in the graph."""
+    edges = await asyncio.to_thread(session.find_inferred_edges)
+    return {"inferred_edges": edges, "count": len(edges)}
+
+
+@router.delete("/api/reason/inferred-edges/{edge_id}")
+async def delete_inferred_edge(edge_id: str, session: GraphSession = Depends(get_session)):
+    """Delete a single inferred edge by edge_id."""
+    removed = await asyncio.to_thread(session.remove_inferred_edge, edge_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"Edge '{edge_id}' not found")
+    return {"removed": True, "edge_id": edge_id}

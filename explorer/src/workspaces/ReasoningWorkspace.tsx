@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { BrainCircuit, Play, RotateCcw, CheckCircle2, AlertCircle, Zap, GitBranch, Info, Sparkles, Wand2, Loader2 } from "lucide-react";
+import { BrainCircuit, Play, RotateCcw, CheckCircle2, AlertCircle, Zap, GitBranch, Info, Sparkles, Wand2, Loader2, Trash2, Link2 } from "lucide-react";
 
 const SAMPLE_FACTS = `deriva_de(area_cultivada, area_agricola)
 compone(area_agricola, uso_de_suelo)`;
@@ -47,6 +47,10 @@ export function ReasoningWorkspace() {
   const [nlRule, setNlRule] = useState("");
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateError, setTranslateError] = useState("");
+  const [inferredEdges, setInferredEdges] = useState<Array<{ edge_id: string; source: string; target: string; edge_type: string; inferred_from: string; reasoning_mode: string; rules: string[] }>>([]);
+  const [edgesLoading, setEdgesLoading] = useState(false);
+  const [edgesLoaded, setEdgesLoaded] = useState(false);
+  const [removingEdgeId, setRemovingEdgeId] = useState("");
 
   async function handleRun() {
     setIsRunning(true);
@@ -112,6 +116,35 @@ export function ReasoningWorkspace() {
       setExplainError(e instanceof Error ? e.message : "Error al explicar");
     } finally {
       setIsExplaining(false);
+    }
+  }
+
+  async function loadInferredEdges() {
+    setEdgesLoading(true);
+    try {
+      const res = await fetch("/api/reason/inferred-edges");
+      if (!res.ok) throw new Error("Error al cargar aristas inferidas");
+      const data = await res.json();
+      setInferredEdges(data.inferred_edges || []);
+      setEdgesLoaded(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cargar aristas inferidas");
+    } finally {
+      setEdgesLoading(false);
+    }
+  }
+
+  async function handleRemoveEdge(edgeId: string) {
+    setRemovingEdgeId(edgeId);
+    try {
+      const res = await fetch(`/api/reason/inferred-edges/${encodeURIComponent(edgeId)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Error al eliminar arista");
+      setInferredEdges(prev => prev.filter(e => e.edge_id !== edgeId));
+      queryClient.invalidateQueries({ queryKey: ["graph", "full-load"] });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al eliminar arista");
+    } finally {
+      setRemovingEdgeId("");
     }
   }
 
@@ -348,6 +381,72 @@ export function ReasoningWorkspace() {
               )}
               {explanation && !isExplaining && (
                 <div style={{ fontSize: 13, color: "var(--ws-text)", lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{explanation}</div>
+              )}
+            </div>
+          )}
+
+          {/* Inferred edges management */}
+          {result && !isRunning && (
+            <div className="ws-animate-in" style={{ marginTop: 8, padding: "14px 16px", borderRadius: "var(--ws-radius-sm)", border: "1px solid var(--ws-border)", background: "var(--ws-surface)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <Link2 size={15} color="var(--ws-accent)" />
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ws-text)" }}>Aristas inferidas en el grafo</span>
+                {!edgesLoaded && !edgesLoading && (
+                  <button
+                    className="ws-btn ws-btn--ghost"
+                    onClick={loadInferredEdges}
+                    style={{ marginLeft: "auto", padding: "4px 10px", fontSize: 11 }}
+                  >
+                    Cargar aristas
+                  </button>
+                )}
+                {edgesLoaded && (
+                  <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ws-text-muted)" }}>
+                    {inferredEdges.length} arista(s)
+                  </span>
+                )}
+              </div>
+              {edgesLoading && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--ws-text-dim)", fontSize: 12 }}>
+                  <Loader2 size={14} className="ws-spin" />
+                  <span>Cargando aristas inferidas…</span>
+                </div>
+              )}
+              {edgesLoaded && inferredEdges.length === 0 && (
+                <div style={{ fontSize: 12, color: "var(--ws-text-muted)", padding: "8px 0" }}>
+                  No hay aristas inferidas en el grafo.
+                </div>
+              )}
+              {edgesLoaded && inferredEdges.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {inferredEdges.map((edge) => (
+                    <div key={edge.edge_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 6, background: "rgba(0,0,0,0.2)", border: "1px solid var(--ws-border)" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+                          <code style={{ color: "var(--ws-text)", fontSize: 11, wordBreak: "break-all" }}>{edge.source}</code>
+                          <span style={{ color: "var(--ws-accent)", fontSize: 10 }}>→</span>
+                          <code style={{ color: "var(--ws-text)", fontSize: 11, wordBreak: "break-all" }}>{edge.target}</code>
+                        </div>
+                        <div style={{ fontSize: 10, color: "var(--ws-text-dim)", marginTop: 2 }}>
+                          {edge.edge_type}{edge.inferred_from && ` · ${edge.inferred_from}`}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveEdge(edge.edge_id)}
+                        disabled={removingEdgeId === edge.edge_id}
+                        style={{
+                          flexShrink: 0, padding: "4px 8px", borderRadius: 6, cursor: "pointer",
+                          background: "var(--ws-red-soft)", border: "1px solid rgba(255,123,114,0.2)",
+                          color: "var(--ws-red)", fontSize: 11,
+                          opacity: removingEdgeId === edge.edge_id ? 0.5 : 1,
+                        }}
+                        title="Eliminar arista inferida"
+                      >
+                        {removingEdgeId === edge.edge_id ? <Loader2 size={12} className="ws-spin" /> : <Trash2 size={12} />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

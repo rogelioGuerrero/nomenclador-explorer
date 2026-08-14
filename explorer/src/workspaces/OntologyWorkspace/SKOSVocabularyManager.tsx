@@ -171,7 +171,7 @@ function ConceptDetailPanel({
                 ))}
               </div>
             )}
-            <div style={{ color: "#5a7a9a", fontSize: 10, fontFamily: "monospace", wordBreak: "break-all" }}>
+            <div style={{ color: "var(--ws-text-muted)", fontSize: 10, fontFamily: "monospace", wordBreak: "break-all" }}>
               {uri}
             </div>
           </div>
@@ -304,7 +304,7 @@ function ConceptTreeNode({
         </span>
 
         {hasChildren && (
-          <span style={{ color: "#5a7a9a", fontSize: 10, flexShrink: 0 }}>
+          <span style={{ color: "var(--ws-text-muted)", fontSize: 10, flexShrink: 0 }}>
             {children.length}
           </span>
         )}

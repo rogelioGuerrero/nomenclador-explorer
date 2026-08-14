@@ -14,6 +14,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
+import { GlobalSearch } from './GlobalSearch';
 
 const GraphWorkspace = lazy(() => import('./workspaces/GraphWorkspace/GraphWorkspace').then((module) => ({ default: module.GraphWorkspace })));
 const ReasoningWorkspace = lazy(() => import('./workspaces/ReasoningWorkspace').then((module) => ({ default: module.ReasoningWorkspace })));
@@ -385,6 +386,16 @@ export default function App() {
   const [exploreView, setExploreView] = useState<ExploreView>('graph');
   const [analyzeView, setAnalyzeView] = useState<AnalyzeView>('reasoning');
 
+  const navigateToGraph = (_nodeId: string) => {
+    setActiveWorkspace('explore');
+    setExploreView('graph');
+  };
+
+  const navigateToConcept = (_conceptName: string) => {
+    setActiveWorkspace('explore');
+    setExploreView('concepts');
+  };
+
 
   const renderWorkspace = () => {
     if (activeWorkspace === 'welcome') {
@@ -499,6 +510,7 @@ export default function App() {
       <div className="app-shell">
         <aside className="app-rail">
           <button className="brand-pill" title="Explorador de Nomenclador" onClick={() => setActiveWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>NE</button>
+          <GlobalSearch onNavigateGraph={navigateToGraph} onNavigateConcept={navigateToConcept} />
           {navItems.map(({ id, label, hint, icon: Icon }) => (
             <button
               key={id}

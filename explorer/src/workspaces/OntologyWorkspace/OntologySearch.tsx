@@ -129,7 +129,7 @@ function ResultRow({
         </div>
       )}
       {result.source_ontology && (
-        <div style={{ color: "#5a7a9a", fontSize: 10 }}>
+        <div style={{ color: "var(--ws-text-muted)", fontSize: 10 }}>
           From: {result.source_ontology}
         </div>
       )}
@@ -159,7 +159,7 @@ function CollapsibleList({ label, items }: { label: string; items: string[] }) {
             </div>
           ))}
           {items.length > 12 && (
-            <span style={{ color: "#5a7a9a", fontSize: 10 }}>+{items.length - 12} more</span>
+            <span style={{ color: "var(--ws-text-muted)", fontSize: 10 }}>+{items.length - 12} more</span>
           )}
         </div>
       )}
@@ -243,7 +243,7 @@ function DetailPanel({
               </h3>
               <TypeBadge entityType={detail.entity_type} />
             </div>
-            <div style={{ color: "#5a7a9a", fontSize: 10, fontFamily: "monospace", wordBreak: "break-all" }}>
+            <div style={{ color: "var(--ws-text-muted)", fontSize: 10, fontFamily: "monospace", wordBreak: "break-all" }}>
               {detail.uri}
             </div>
           </div>

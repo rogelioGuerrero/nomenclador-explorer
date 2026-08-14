@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
 
 from ..dependencies import get_session
@@ -42,6 +42,12 @@ class ValidateRequest(BaseModel):
 
 class ClassifierRequest(BaseModel):
     standard_id: str
+
+
+class ReviewRequest(BaseModel):
+    review_status: str  # approved | rejected | under_review
+    review_notes: str = ""
+    reviewed_by: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -84,6 +90,30 @@ async def get_concept(name: str):
     return result
 
 
+@router.patch("/concepts/{name}/review")
+async def review_concept(name: str, req: ReviewRequest):
+    """Update review status and notes for a concept. Persists to disk."""
+    agent = _get_agent()
+    concept = agent._find_concept_by_name(name)
+    if not concept:
+        raise HTTPException(status_code=404, detail=f"Concepto '{name}' no encontrado")
+    valid_statuses = {"approved", "rejected", "under_review", "proposed", "deprecated"}
+    if req.review_status not in valid_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=f"review_status must be one of {valid_statuses}",
+        )
+    result = agent.update_review(
+        node_id=concept["id"],
+        review_status=req.review_status,
+        review_notes=req.review_notes,
+        reviewed_by=req.reviewed_by,
+    )
+    if isinstance(result, dict) and "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
 @router.post("/interoperability")
 async def check_interoperability(req: InteropRequest):
     """Check interoperability between two data sources."""
@@ -113,6 +143,43 @@ async def get_classifier(standard_id: str):
     if isinstance(result, dict) and "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
     return result
+
+
+@router.get("/review-summary")
+async def review_summary():
+    """Summary of review_status and data_classification across the nomenclador."""
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+
+    review_counts: dict[str, int] = {}
+    classification_counts: dict[str, int] = {}
+    pending_concepts: list[dict] = []
+
+    for node_id, data in g.nodes(data=True):
+        nt = data.get("node_type") or data.get("type", "")
+        if nt in ("concept", "Concept"):
+            rs = data.get("review_status", "approved")
+            review_counts[rs] = review_counts.get(rs, 0) + 1
+            dc = data.get("data_classification", "publico")
+            classification_counts[dc] = classification_counts.get(dc, 0) + 1
+            if rs in ("proposed", "under_review"):
+                pending_concepts.append({
+                    "id": node_id,
+                    "name": data.get("name", node_id),
+                    "review_status": rs,
+                    "proposed_by": data.get("proposed_by", ""),
+                    "standard": data.get("standard"),
+                })
+
+    return {
+        "review_counts": review_counts,
+        "classification_counts": classification_counts,
+        "pending_concepts": pending_concepts,
+        "pending_count": len(pending_concepts),
+        "total_concepts": sum(review_counts.values()),
+    }
 
 
 @router.get("/sources")
@@ -306,3 +373,475 @@ async def reload_graph():
         return {"status": "ok", "nodes": node_count, "edges": edge_count, "path": kg_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to reload graph: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Lineage — trace relationships across the nomenclador graph
+# ---------------------------------------------------------------------------
+
+_LINEAGE_EDGE_TYPES = {
+    "implementa", "transforma_a", "equivalente_a", "proviene_de",
+    "compone", "deriva_de", "subconcepto_de", "usa_clasificador",
+    "respaldado_por", "pertenece_a", "tiene_contexto",
+}
+
+
+@router.get("/lineage/{node_id}")
+async def get_lineage(node_id: str, depth: int = Query(2, ge=1, le=4)):
+    """Trace lineage from a node, following nomenclador edges up to *depth* hops."""
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+
+    # Resolve by name first (case-insensitive), then by raw node_id
+    resolved_id = None
+    concept = agent._find_concept_by_name(node_id)
+    if concept:
+        resolved_id = concept["id"]
+    elif node_id in g:
+        resolved_id = node_id
+    else:
+        # Try case-insensitive match on all node names
+        for nid, data in g.nodes(data=True):
+            if data.get("name", "").lower() == node_id.lower():
+                resolved_id = nid
+                break
+    if not resolved_id:
+        raise HTTPException(status_code=404, detail=f"Node '{node_id}' not found")
+
+    visited: set[str] = set()
+    nodes_out: list[dict] = []
+    edges_out: list[dict] = []
+    queue: list[tuple[str, int]] = [(resolved_id, 0)]
+    visited.add(resolved_id)
+
+    while queue:
+        current, current_depth = queue.pop(0)
+        data = g.nodes[current]
+        nodes_out.append({
+            "id": current,
+            "label": data.get("name", data.get("id", current)),
+            "type": data.get("type", data.get("node_type", "unknown")),
+            "source_db": data.get("source_db", ""),
+            "standard": data.get("standard"),
+            "review_status": data.get("review_status", "approved"),
+            "data_classification": data.get("data_classification", "publico"),
+            "is_root": current == resolved_id,
+        })
+        if current_depth >= depth:
+            continue
+        for _, target, edge_data in g.edges(current, data=True):
+            edge_type = edge_data.get("type", "")
+            if edge_type not in _LINEAGE_EDGE_TYPES:
+                continue
+            edges_out.append({
+                "id": f"{current}->{target}",
+                "source": current,
+                "target": target,
+                "label": edge_type,
+            })
+            if target not in visited:
+                visited.add(target)
+                queue.append((target, current_depth + 1))
+        for source, _, edge_data in g.in_edges(current, data=True):
+            edge_type = edge_data.get("type", "")
+            if edge_type not in _LINEAGE_EDGE_TYPES:
+                continue
+            edges_out.append({
+                "id": f"{source}->{current}",
+                "source": source,
+                "target": current,
+                "label": edge_type,
+            })
+            if source not in visited:
+                visited.add(source)
+                queue.append((source, current_depth + 1))
+
+    return {"root": resolved_id, "nodes": nodes_out, "edges": edges_out, "depth": depth}
+
+
+# ---------------------------------------------------------------------------
+# Quality dashboard — aggregated metrics by source
+# ---------------------------------------------------------------------------
+
+@router.get("/quality-summary")
+async def quality_summary():
+    """Aggregate quality metrics (completeness, uniqueness, consistency, validity, quality_score)
+    by source, plus list of quality issues."""
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+
+    source_metrics: dict[str, dict] = {}
+    quality_issues: list[dict] = []
+    source_last_verified: dict[str, str] = {}
+
+    # First pass: collect last_verified from source nodes
+    for node_id, data in g.nodes(data=True):
+        nt = data.get("node_type") or data.get("type", "")
+        if nt in ("source", "Source"):
+            sname = data.get("name", node_id)
+            lv = data.get("last_verified", "")
+            if lv:
+                source_last_verified[sname] = lv
+
+    for node_id, data in g.nodes(data=True):
+        nt = data.get("node_type") or data.get("type", "")
+        if nt in ("field", "Field"):
+            src = data.get("source_db", "?")
+            if src not in source_metrics:
+                source_metrics[src] = {
+                    "source": src,
+                    "field_count": 0,
+                    "completeness": [],
+                    "uniqueness": [],
+                    "consistency": [],
+                    "validity": [],
+                    "quality_score": [],
+                    "low_confidence": 0,
+                    "pending_review": 0,
+                }
+            m = source_metrics[src]
+            m["field_count"] += 1
+            for metric in ("completeness", "uniqueness", "consistency", "validity", "quality_score"):
+                val = data.get(metric)
+                if val is not None:
+                    try:
+                        m[metric].append(float(val))
+                    except (TypeError, ValueError):
+                        pass
+            if data.get("confidence", "low") == "low":
+                m["low_confidence"] += 1
+            if data.get("review_status", "approved") in ("proposed", "under_review"):
+                m["pending_review"] += 1
+
+        elif nt in ("quality_issue", "QualityIssue"):
+            quality_issues.append({
+                "id": node_id,
+                "issue_type": data.get("issue_type", ""),
+                "severity": data.get("severity", "warning"),
+                "detail": data.get("detail", ""),
+                "metric_value": data.get("metric_value", 0.0),
+                "detected_by": data.get("detected_by", ""),
+            })
+
+    # Compute averages
+    sources = []
+    for src, m in source_metrics.items():
+        entry = {"source": src, "field_count": m["field_count"],
+                 "low_confidence": m["low_confidence"], "pending_review": m["pending_review"],
+                 "last_verified": source_last_verified.get(src, "")}
+        for metric in ("completeness", "uniqueness", "consistency", "validity", "quality_score"):
+            vals = m[metric]
+            entry[metric] = round(sum(vals) / len(vals), 3) if vals else 0.0
+        sources.append(entry)
+    sources.sort(key=lambda s: s["source"])
+
+    issues_by_severity = {"error": 0, "warning": 0, "info": 0}
+    for issue in quality_issues:
+        sev = issue["severity"]
+        issues_by_severity[sev] = issues_by_severity.get(sev, 0) + 1
+
+    return {
+        "sources": sources,
+        "source_count": len(sources),
+        "total_fields": sum(s["field_count"] for s in sources),
+        "quality_issues": quality_issues,
+        "issues_by_severity": issues_by_severity,
+        "total_issues": len(quality_issues),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Decision Log — lifecycle audit trail from decision_log.json
+# ---------------------------------------------------------------------------
+
+@router.get("/decision-log")
+async def get_decision_log():
+    """Read the decision log from the governance-agent nomenclador directory."""
+    kg_path = os.environ.get("SEMANTICA_KG_PATH", "")
+    if not kg_path:
+        raise HTTPException(status_code=400, detail="SEMANTICA_KG_PATH not set")
+    log_path = Path(kg_path).parent / "decision_log.json"
+    if not log_path.exists():
+        return {"entries": {}}
+    try:
+        with open(log_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read decision log: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Equivalences — edges of type equivalente_a
+# ---------------------------------------------------------------------------
+
+@router.get("/equivalences")
+async def list_equivalences():
+    """List all equivalente_a edges between fields/sources."""
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+    equivalences = []
+    for u, v, data in g.edges(data=True):
+        et = data.get("edge_type") or data.get("type", "")
+        if et == "equivalente_a":
+            node_u = g.nodes[u]
+            node_v = g.nodes[v]
+            equivalences.append({
+                "source_field": {
+                    "id": u,
+                    "name": node_u.get("name", node_u.get("column", u)),
+                    "source_db": node_u.get("source_db", ""),
+                },
+                "target_field": {
+                    "id": v,
+                    "name": node_v.get("name", node_v.get("column", v)),
+                    "source_db": node_v.get("source_db", ""),
+                },
+                "confidence": data.get("confidence", ""),
+                "match_method": data.get("match_method", data.get("method", "")),
+            })
+    return {"equivalences": equivalences, "count": len(equivalences)}
+
+
+# ---------------------------------------------------------------------------
+# Source management — detailed list, upload (CSV), delete
+# ---------------------------------------------------------------------------
+
+@router.get("/sources/detailed")
+async def list_sources_detailed():
+    """List all data source nodes with field counts and metadata."""
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+    sources = []
+    for node_id, data in g.nodes(data=True):
+        if data.get("node_type") == "source" or data.get("type") == "source":
+            # Count fields belonging to this source
+            field_count = 0
+            for _f_id, f_data in g.nodes(data=True):
+                if (f_data.get("node_type") == "field" or f_data.get("type") == "field"):
+                    if f_data.get("source_db", "") == data.get("name", node_id):
+                        field_count += 1
+            sources.append({
+                "id": node_id,
+                "name": data.get("name", node_id),
+                "description": data.get("description", ""),
+                "last_verified": data.get("last_verified", ""),
+                "review_status": data.get("review_status", "approved"),
+                "field_count": field_count,
+            })
+    return {"sources": sources, "count": len(sources)}
+
+
+@router.delete("/sources/{source_id}")
+async def delete_source(source_id: str):
+    """Delete a source node and all its fields from the nomenclador graph."""
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+    if source_id not in g:
+        raise HTTPException(status_code=404, detail=f"Source '{source_id}' not found")
+    # Find all fields belonging to this source
+    source_name = g.nodes[source_id].get("name", source_id)
+    fields_to_remove = []
+    for node_id, data in g.nodes(data=True):
+        if (data.get("node_type") == "field" or data.get("type") == "field"):
+            if data.get("source_db", "") == source_name:
+                fields_to_remove.append(node_id)
+    # Remove fields first, then source
+    for fid in fields_to_remove:
+        g.remove_node(fid)
+    g.remove_node(source_id)
+    # Persist
+    agent.save_graph()
+    return {
+        "status": "ok",
+        "deleted_source": source_id,
+        "deleted_fields": len(fields_to_remove),
+    }
+
+
+@router.post("/sources/preview")
+async def preview_source(file: UploadFile = File(...)):
+    """Profile a CSV file without persisting. Returns column-level profiling for preview."""
+    import csv
+    import io
+    import re as _re
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        try:
+            text = raw.decode("latin-1")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Cannot decode file: {e}")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV has no header row")
+
+    rows = list(reader)
+    total = len(rows)
+
+    columns = []
+    for col_name in reader.fieldnames:
+        values = [r.get(col_name, "") for r in rows]
+        non_null = [v for v in values if v and str(v).strip()]
+        null_count = total - len(non_null)
+        unique_count = len(set(non_null))
+
+        sample = non_null[:20] if non_null else []
+        data_type = "text"
+        if sample:
+            try:
+                float(sample[0])
+                data_type = "number"
+            except (ValueError, TypeError):
+                if _re.match(r"^\d{4}-\d{2}-\d{2}", sample[0]):
+                    data_type = "date"
+                else:
+                    data_type = "text"
+
+        completeness = round(len(non_null) / total, 3) if total > 0 else 0.0
+        uniqueness = round(unique_count / len(non_null), 3) if non_null else 0.0
+
+        columns.append({
+            "name": col_name,
+            "data_type": data_type,
+            "null_count": null_count,
+            "total_count": total,
+            "unique_count": unique_count,
+            "completeness": completeness,
+            "uniqueness": uniqueness,
+            "sample_values": non_null[:5],
+        })
+
+    return {
+        "filename": file.filename,
+        "row_count": total,
+        "column_count": len(reader.fieldnames),
+        "columns": columns,
+    }
+
+
+@router.post("/sources/upload")
+async def upload_source(file: UploadFile = File(...)):
+    """Upload a CSV file, profile it, and add as a new source in the nomenclador.
+
+    This runs a simplified version of rapid_assessment:
+    - Detects column types, null rates, unique counts
+    - Creates source + field nodes in the graph
+    - Returns summary of detected fields
+    """
+    import csv
+    import io
+    from datetime import datetime, timezone
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        try:
+            text = raw.decode("latin-1")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Cannot decode file: {e}")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        raise HTTPException(status_code=400, detail="CSV has no header row")
+
+    rows = list(reader)
+    total = len(rows)
+
+    # Profile each column
+    source_name = f"uploaded_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+    agent = _get_agent()
+    g = agent.get_graph()
+    if g is None:
+        raise HTTPException(status_code=503, detail="Nomenclador graph not loaded")
+
+    # Create source node
+    source_id = f"source:{source_name}"
+    g.add_node(source_id, **{
+        "type": "source",
+        "name": source_name,
+        "description": f"Uploaded CSV ({total} rows, {len(reader.fieldnames)} columns)",
+        "last_verified": datetime.now(timezone.utc).isoformat(),
+        "review_status": "proposed",
+    })
+
+    field_count = 0
+    for col_name in reader.fieldnames:
+        values = [r.get(col_name, "") for r in rows]
+        non_null = [v for v in values if v and str(v).strip()]
+        null_count = total - len(non_null)
+        unique_count = len(set(non_null))
+
+        # Infer data type
+        sample = non_null[:20] if non_null else []
+        data_type = "text"
+        if sample:
+            try:
+                float(sample[0])
+                data_type = "number"
+            except (ValueError, TypeError):
+                # Check if date-like
+                import re
+                if re.match(r"^\d{4}-\d{2}-\d{2}", sample[0]):
+                    data_type = "date"
+                else:
+                    data_type = "text"
+
+        completeness = round(len(non_null) / total, 3) if total > 0 else 0.0
+        uniqueness = round(unique_count / len(non_null), 3) if non_null else 0.0
+
+        field_id = f"field:{source_name}:{col_name}"
+        g.add_node(field_id, **{
+            "type": "field",
+            "source_db": source_name,
+            "table": source_name,
+            "column": col_name,
+            "name": col_name,
+            "data_type": data_type,
+            "nullable": null_count > 0,
+            "null_count": null_count,
+            "total_count": total,
+            "unique_count": unique_count,
+            "sample_values": non_null[:5],
+            "confidence": "low",
+            "completeness": completeness,
+            "uniqueness": uniqueness,
+            "consistency": 0.0,
+            "validity": 0.0,
+            "quality_score": round((completeness + uniqueness) / 2, 3),
+            "review_status": "proposed",
+            "data_classification": "publico",
+        })
+        # Link field -> source
+        g.add_edge(field_id, source_id, **{"type": "proviene_de"})
+        field_count += 1
+
+    # Persist
+    agent.save_graph()
+
+    return {
+        "status": "ok",
+        "source_name": source_name,
+        "source_id": source_id,
+        "field_count": field_count,
+        "row_count": total,
+    }

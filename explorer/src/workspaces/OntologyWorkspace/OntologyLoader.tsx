@@ -432,7 +432,7 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
             <div style={{ color: "#8fa8c6", fontSize: 13 }}>
               Drop a file here or <span style={{ color: "#4aa3ff" }}>browse</span>
             </div>
-            <div style={{ color: "#5a7a9a", fontSize: 11 }}>
+            <div style={{ color: "var(--ws-text-muted)", fontSize: 11 }}>
               .ttl · .rdf · .owl · .xml · .nt · .jsonld · .json · .n3
             </div>
           </>

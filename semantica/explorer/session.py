@@ -830,3 +830,28 @@ class GraphSession:
             if added and not has_mutation_callback:
                 self._bump_graph_revision_locked()
         return added
+
+    def find_inferred_edges(self) -> List[Dict[str, Any]]:
+        """Return all inferred edges as serializable dicts."""
+        with self._lock:
+            edges = self.graph.find_inferred_edges()
+            return [
+                {
+                    "edge_id": e.edge_id,
+                    "source": e.source_id,
+                    "target": e.target_id,
+                    "edge_type": e.edge_type,
+                    "inferred_from": e.metadata.get("inferred_from", ""),
+                    "reasoning_mode": e.metadata.get("reasoning_mode", ""),
+                    "rules": e.metadata.get("rules", []),
+                }
+                for e in edges
+            ]
+
+    def remove_inferred_edge(self, edge_id: str) -> bool:
+        """Remove a single inferred edge by edge_id."""
+        with self._lock:
+            removed = self.graph.remove_edge(edge_id)
+            if removed:
+                self._bump_graph_revision_locked()
+        return removed

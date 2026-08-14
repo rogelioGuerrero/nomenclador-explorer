@@ -38,7 +38,7 @@ class NomencladorAgent:
 
     def __init__(self) -> None:
         self._graph: Any = None
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._path: Optional[str] = None
         self._indices_built = False
         self._concepts_by_name: dict[str, str] = {}
@@ -91,6 +91,64 @@ class NomencladorAgent:
             self._all_classifiers.clear()
             self._fields_by_source_db.clear()
             self._concepts_by_field.clear()
+
+    def save_graph(self, path: str | None = None) -> None:
+        """Persist the in-memory graph back to disk in node-link format."""
+        with self._lock:
+            import networkx as nx
+            if self._graph is None:
+                return
+            dest = path or self._path
+            if not dest:
+                return
+            data = nx.node_link_data(self._graph, edges="links")
+            with open(dest, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            log.info("Nomenclador graph saved to %s", dest)
+
+    def update_review(
+        self,
+        node_id: str,
+        review_status: str,
+        review_notes: str = "",
+        reviewed_by: str = "",
+    ) -> dict:
+        """Update review_status and notes on a node, persist to disk, return updated data.
+        Each review action is appended to a review_history log on the node."""
+        from datetime import datetime, timezone
+        with self._lock:
+            g = self.get_graph()
+            if g is None or node_id not in g:
+                return {"error": f"Node '{node_id}' not found"}
+            data = g.nodes[node_id]
+            now = datetime.now(timezone.utc).isoformat()
+            data["review_status"] = review_status
+            data["reviewed_by"] = reviewed_by
+            data["reviewed_at"] = now
+            if review_notes:
+                existing = data.get("review_notes", "")
+                if existing:
+                    data["review_notes"] = existing + "\n---\n" + review_notes
+                else:
+                    data["review_notes"] = review_notes
+            # Append to history log
+            history = data.get("review_history", [])
+            history.append({
+                "timestamp": now,
+                "status": review_status,
+                "notes": review_notes,
+                "reviewed_by": reviewed_by,
+            })
+            data["review_history"] = history
+            # Handle deprecation
+            if review_status == "deprecated":
+                data["deprecated_at"] = now
+            # Persist
+            self.save_graph()
+            return {"id": node_id, "review_status": review_status,
+                    "reviewed_by": data["reviewed_by"], "reviewed_at": data["reviewed_at"],
+                    "review_notes": data.get("review_notes", ""),
+                    "review_history": history}
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -215,18 +273,24 @@ class NomencladorAgent:
                 "name": "Poblacion objetivo",
                 "status": "mismatch",
                 "detail": f"Asimetria: '{pop_a}' vs '{pop_b}'",
+                "field_a_value": pop_a,
+                "field_b_value": pop_b,
             })
         elif pop_a and pop_b and pop_a == pop_b:
             checkpoints.append({
                 "name": "Poblacion objetivo",
                 "status": "match",
                 "detail": f"Ambas: '{pop_a}'",
+                "field_a_value": pop_a,
+                "field_b_value": pop_b,
             })
         else:
             checkpoints.append({
                 "name": "Poblacion objetivo",
                 "status": "unknown",
                 "detail": "Sin informacion de poblacion",
+                "field_a_value": pop_a or "(no definida)",
+                "field_b_value": pop_b or "(no definida)",
             })
 
         # Checkpoint 2: Capture method
@@ -237,18 +301,24 @@ class NomencladorAgent:
                 "name": "Metodologia de captura",
                 "status": "mismatch",
                 "detail": f"Asimetria: '{cap_a}' vs '{cap_b}'",
+                "field_a_value": cap_a,
+                "field_b_value": cap_b,
             })
         elif cap_a and cap_b and cap_a == cap_b:
             checkpoints.append({
                 "name": "Metodologia de captura",
                 "status": "match",
                 "detail": f"Ambas usan: '{cap_a}'",
+                "field_a_value": cap_a,
+                "field_b_value": cap_b,
             })
         else:
             checkpoints.append({
                 "name": "Metodologia de captura",
                 "status": "unknown",
                 "detail": "Sin informacion de metodo de captura",
+                "field_a_value": cap_a or "(no definida)",
+                "field_b_value": cap_b or "(no definida)",
             })
 
         # Checkpoint 3: Classifier
@@ -258,12 +328,16 @@ class NomencladorAgent:
                 "name": "Clasificador activo",
                 "status": "match",
                 "detail": f"Ambas usan: {std}",
+                "field_a_value": std,
+                "field_b_value": std,
             })
         else:
             checkpoints.append({
                 "name": "Clasificador activo",
                 "status": "unknown",
                 "detail": "Ninguna fuente tiene clasificador definido",
+                "field_a_value": "(no definido)",
+                "field_b_value": "(no definido)",
             })
 
         # Checkpoint 4: Data distribution
@@ -276,18 +350,24 @@ class NomencladorAgent:
                     "name": "Distribucion de datos",
                     "status": "mismatch",
                     "detail": f"Cardinalidad discrepante: {uniq_a} vs {uniq_b} unicos (ratio {ratio:.0%})",
+                    "field_a_value": f"uniq={uniq_a}",
+                    "field_b_value": f"uniq={uniq_b}",
                 })
             else:
                 checkpoints.append({
                     "name": "Distribucion de datos",
                     "status": "match",
                     "detail": f"Distribuciones compatibles (cardinalidad: {uniq_a}/{uniq_b})",
+                    "field_a_value": f"uniq={uniq_a}",
+                    "field_b_value": f"uniq={uniq_b}",
                 })
         else:
             checkpoints.append({
                 "name": "Distribucion de datos",
                 "status": "unknown",
                 "detail": "Sin metricas de cardinalidad",
+                "field_a_value": f"uniq={uniq_a or '?'}",
+                "field_b_value": f"uniq={uniq_b or '?'}",
             })
 
         # Recommendation
@@ -414,6 +494,11 @@ class NomencladorAgent:
                     "standard": data.get("standard") or None,
                     "definition": data.get("definition", "-") or "-",
                     "sources": sources or [],
+                    "source_count": len(sources),
+                    "review_status": data.get("review_status", "approved"),
+                    "proposed_by": data.get("proposed_by", ""),
+                    "data_classification": data.get("data_classification", "publico"),
+                    "custodian": data.get("custodian", "") or "",
                 })
         if not concepts:
             return {"error": "Nomenclador vacio o no cargado."}
@@ -449,6 +534,7 @@ class NomencladorAgent:
         if not concept:
             return {"error": f"Concepto '{name}' no encontrado."}
         classifier = self._find_classifier_of_concept(concept["id"])
+        fields = self._find_fields_of_concept(concept["id"])
         result = {
             "name": concept.get("name", ""),
             "standard": concept.get("standard") or None,
@@ -460,6 +546,30 @@ class NomencladorAgent:
             "custodian_department": concept.get("custodian_department", "-") or "-",
             "data_classification": concept.get("data_classification", "publico"),
             "normative": concept.get("normative", "-") or "-",
+            "review_status": concept.get("review_status", "approved"),
+            "proposed_by": concept.get("proposed_by", ""),
+            "review_notes": concept.get("review_notes", ""),
+            "reviewed_by": concept.get("reviewed_by", ""),
+            "reviewed_at": concept.get("reviewed_at", ""),
+            "review_history": concept.get("review_history", []),
+            "deprecated_at": concept.get("deprecated_at", ""),
+            "fields": [
+                {
+                    "source": f.get("source_db", "?"),
+                    "column": f.get("column", f.get("name", "?")),
+                    "data_type": f.get("data_type", "?"),
+                    "confidence": f.get("confidence", "low"),
+                    "data_classification": f.get("data_classification", "publico"),
+                    "quality_score": f.get("quality_score", 0.0),
+                    "review_status": f.get("review_status", "approved"),
+                    "completeness": f.get("completeness", 0.0),
+                    "uniqueness": f.get("uniqueness", 0.0),
+                    "consistency": f.get("consistency", 0.0),
+                    "validity": f.get("validity", 0.0),
+                    "last_verified": f.get("last_verified", ""),
+                }
+                for f in fields
+            ],
         }
         if classifier:
             result["classifier"] = {

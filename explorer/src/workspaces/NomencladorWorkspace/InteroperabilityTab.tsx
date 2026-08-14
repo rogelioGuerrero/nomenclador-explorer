@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, ArrowRight, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Copy } from "lucide-react";
+import { Loader2, ArrowRight, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Copy, GitCompare } from "lucide-react";
 
 type Source = { id: string; name: string; label: string };
 
@@ -7,6 +7,8 @@ type Checkpoint = {
   name: string;
   status: string;
   detail: string;
+  field_a_value?: string;
+  field_b_value?: string;
 };
 
 type InteropPath = {
@@ -38,6 +40,13 @@ type TransformResult = {
   }>;
 };
 
+type Equivalence = {
+  source_field: { id: string; name: string; source_db: string };
+  target_field: { id: string; name: string; source_db: string };
+  confidence: string;
+  match_method: string;
+};
+
 function statusIcon(status: string) {
   if (status === "match") return <CheckCircle2 size={16} color="var(--ws-green)" />;
   if (status === "mismatch") return <XCircle size={16} color="var(--ws-red)" />;
@@ -53,6 +62,7 @@ function statusColor(status: string) {
 }
 
 export function InteroperabilityTab() {
+  const [mode, setMode] = useState<"compare" | "equivalences">("compare");
   const [sources, setSources] = useState<Source[]>([]);
   const [sourceDb, setSourceDb] = useState("");
   const [targetDb, setTargetDb] = useState("");
@@ -63,6 +73,9 @@ export function InteroperabilityTab() {
   const [showTransform, setShowTransform] = useState(false);
   const [loadingTransform, setLoadingTransform] = useState(false);
   const [sourcesLoaded, setSourcesLoaded] = useState(false);
+  const [equivalences, setEquivalences] = useState<Equivalence[]>([]);
+  const [equivLoading, setEquivLoading] = useState(false);
+  const [equivLoaded, setEquivLoaded] = useState(false);
 
   async function loadSources() {
     if (sourcesLoaded) return;
@@ -77,6 +90,22 @@ export function InteroperabilityTab() {
   }
 
   loadSources();
+
+  async function loadEquivalences() {
+    if (equivLoaded) return;
+    setEquivLoading(true);
+    try {
+      const res = await fetch("/api/nomenclador/equivalences");
+      if (!res.ok) throw new Error("Error al cargar equivalencias");
+      const data = await res.json();
+      setEquivalences(data.equivalences || []);
+      setEquivLoaded(true);
+    } catch (e) {
+      setError("No se pudieron cargar las equivalencias");
+    } finally {
+      setEquivLoading(false);
+    }
+  }
 
   async function runInterop() {
     if (!sourceDb || !targetDb) return;
@@ -139,6 +168,33 @@ export function InteroperabilityTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1100 }}>
+      {/* Mode toggle */}
+      <div style={{ display: "flex", gap: 0, borderRadius: 8, overflow: "hidden", border: "1px solid var(--ws-border)", width: "fit-content" }}>
+        <button
+          onClick={() => setMode("compare")}
+          style={{
+            padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
+            background: mode === "compare" ? "var(--ws-accent-soft)" : "var(--ws-surface)",
+            color: mode === "compare" ? "var(--ws-accent)" : "var(--ws-text-muted)",
+          }}
+        >
+          Comparar fuentes
+        </button>
+        <button
+          onClick={() => { setMode("equivalences"); void loadEquivalences(); }}
+          style={{
+            padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
+            background: mode === "equivalences" ? "var(--ws-accent-soft)" : "var(--ws-surface)",
+            color: mode === "equivalences" ? "var(--ws-accent)" : "var(--ws-text-muted)",
+            display: "inline-flex", alignItems: "center", gap: 6,
+          }}
+        >
+          <GitCompare size={14} />
+          Equivalencias
+        </button>
+      </div>
+
+      {mode === "compare" && (<>
       {/* Source selectors */}
       <div className="ws-card">
         <h3 style={{ margin: "0 0 16px 0", fontSize: "15px", color: "var(--ws-text)" }}>
@@ -219,6 +275,33 @@ export function InteroperabilityTab() {
             </button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {/* Semáforo resumen */}
+            {(() => {
+              const allCps = interop.paths.flatMap(p => p.checkpoints);
+              const matches = allCps.filter(c => c.status === "match").length;
+              const mismatches = allCps.filter(c => c.status === "mismatch").length;
+              const unknowns = allCps.filter(c => c.status === "unknown").length;
+              const total = allCps.length;
+              return (
+                <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 14px", borderRadius: 8, background: "var(--ws-surface)", border: "1px solid var(--ws-border)" }}>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--ws-text-muted)" }}>Guardrails:</span>
+                  <span style={{ fontSize: "11px", display: "inline-flex", alignItems: "center", gap: 4, color: "var(--ws-green)" }}>
+                    <CheckCircle2 size={12} /> {matches} OK
+                  </span>
+                  {mismatches > 0 && (
+                    <span style={{ fontSize: "11px", display: "inline-flex", alignItems: "center", gap: 4, color: "var(--ws-red)" }}>
+                      <XCircle size={12} /> {mismatches} asimetrías
+                    </span>
+                  )}
+                  {unknowns > 0 && (
+                    <span style={{ fontSize: "11px", display: "inline-flex", alignItems: "center", gap: 4, color: "var(--ws-text-dim)" }}>
+                      <HelpCircle size={12} /> {unknowns} sin info
+                    </span>
+                  )}
+                  <span style={{ fontSize: "10px", color: "var(--ws-text-dim)", marginLeft: "auto" }}>{total} checkpoints totales</span>
+                </div>
+              );
+            })()}
             {interop.paths.map((path, i) => (
               <div key={i} className="ws-panel--inset" style={{ padding: 16, borderRadius: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -229,17 +312,49 @@ export function InteroperabilityTab() {
                     {path.field_a.column} → {path.field_b.column}
                   </span>
                 </div>
-                {/* Checkpoints */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-                  {path.checkpoints.map((cp, j) => (
-                    <div key={j} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontSize: "12px" }}>
-                      {statusIcon(cp.status)}
-                      <div>
-                        <div style={{ color: statusColor(cp.status), fontWeight: 600 }}>{cp.name}</div>
-                        <div style={{ color: "var(--ws-text-muted)" }}>{cp.detail}</div>
+                {/* Checkpoint semáforo */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 10 }}>
+                  {path.checkpoints.map((cp, j) => {
+                    const isMatch = cp.status === "match";
+                    const isMismatch = cp.status === "mismatch";
+                    const bg = isMatch ? "var(--ws-green-soft)" : isMismatch ? "var(--ws-red-soft)" : "var(--ws-surface)";
+                    const border = isMatch ? "rgba(76,195,138,0.25)" : isMismatch ? "rgba(255,123,114,0.25)" : "var(--ws-border)";
+                    return (
+                      <div key={j} style={{
+                        display: "flex", alignItems: "center", gap: 10, padding: "8px 12px",
+                        borderRadius: 8, background: bg, border: `1px solid ${border}`,
+                      }}>
+                        <div style={{ flexShrink: 0 }}>{statusIcon(cp.status)}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: "12px", fontWeight: 600, color: statusColor(cp.status), marginBottom: 2 }}>
+                            {cp.name}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "var(--ws-text-muted)", lineHeight: 1.4 }}>
+                            {cp.detail}
+                          </div>
+                        </div>
+                        {cp.field_a_value && cp.field_b_value && (
+                          <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 6, fontSize: "10px" }}>
+                            <span style={{
+                              padding: "2px 6px", borderRadius: 4, maxWidth: 100, overflow: "hidden",
+                              textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              background: "rgba(0,0,0,0.25)", color: "var(--ws-text)",
+                            }} title={cp.field_a_value}>
+                              {cp.field_a_value}
+                            </span>
+                            <ArrowRight size={10} color="var(--ws-text-dim)" />
+                            <span style={{
+                              padding: "2px 6px", borderRadius: 4, maxWidth: 100, overflow: "hidden",
+                              textOverflow: "ellipsis", whiteSpace: "nowrap",
+                              background: "rgba(0,0,0,0.25)", color: "var(--ws-text)",
+                            }} title={cp.field_b_value}>
+                              {cp.field_b_value}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {/* Recommendation */}
                 <div style={{
@@ -321,6 +436,95 @@ export function InteroperabilityTab() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+      </>)}
+
+      {/* Equivalences view */}
+      {mode === "equivalences" && (
+        <div className="ws-card">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <GitCompare size={18} color="var(--ws-accent)" />
+            <h3 style={{ margin: 0, fontSize: "15px", color: "var(--ws-text)" }}>
+              Mapa de equivalencias entre fuentes
+            </h3>
+            {equivalences.length > 0 && (
+              <span style={{
+                fontSize: "11px", fontWeight: 600,
+                background: "var(--ws-accent-soft)", color: "var(--ws-accent)",
+                padding: "2px 8px", borderRadius: 4,
+              }}>
+                {equivalences.length} pares
+              </span>
+            )}
+          </div>
+
+          {equivLoading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 30 }}>
+              <Loader2 size={20} className="animate-spin" color="var(--ws-accent)" />
+            </div>
+          ) : equivalences.length === 0 ? (
+            <p style={{ color: "var(--ws-text-dim)", fontSize: 13, textAlign: "center", padding: 20 }}>
+              No hay equivalencias registradas en el nomenclador.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {equivalences.map((eq, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "12px 16px", borderRadius: 10,
+                    background: "rgba(0,0,0,0.2)", border: "1px solid var(--ws-border)",
+                  }}
+                >
+                  {/* Source field */}
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ws-text)" }}>
+                      {eq.source_field.name}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--ws-text-dim)" }}>
+                      {eq.source_field.source_db}
+                    </div>
+                  </div>
+
+                  {/* Arrow + confidence */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <ArrowRight size={16} color="var(--ws-accent)" />
+                    {eq.confidence && (
+                      <span style={{
+                        fontSize: "9px", fontWeight: 600,
+                        color: eq.confidence === "high" ? "var(--ws-green)" : eq.confidence === "medium" ? "var(--ws-amber)" : "var(--ws-text-dim)",
+                      }}>
+                        {eq.confidence}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Target field */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--ws-text)" }}>
+                      {eq.target_field.name}
+                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--ws-text-dim)" }}>
+                      {eq.target_field.source_db}
+                    </div>
+                  </div>
+
+                  {/* Match method */}
+                  {eq.match_method && (
+                    <span style={{
+                      fontSize: "10px", padding: "2px 8px", borderRadius: 4,
+                      background: "var(--ws-surface)", color: "var(--ws-text-muted)",
+                      border: "1px solid var(--ws-border)",
+                    }}>
+                      {eq.match_method}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

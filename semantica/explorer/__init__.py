@@ -29,8 +29,9 @@ def main(argv=None):
     )
     parser.add_argument(
         "--graph", "-g",
-        required=True,
-        help="Path to a ContextGraph JSON file to load.",
+        default=None,
+        help="Path to a ContextGraph JSON file to load. "
+             "If omitted, uses SEMANTICA_KG_PATH env var.",
     )
     parser.add_argument(
         "--port", "-p",
@@ -50,10 +51,16 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
 
-
     import os
-    if not os.path.isfile(args.graph):
-        _err.print(f"[bold red]Error:[/bold red] graph file not found: {args.graph}")
+    graph_path = args.graph or os.environ.get("SEMANTICA_KG_PATH", "")
+    if not graph_path:
+        _err.print(
+            "[bold red]Error:[/bold red] No graph file specified. "
+            "Use --graph PATH or set SEMANTICA_KG_PATH env var."
+        )
+        sys.exit(1)
+    if not os.path.isfile(graph_path):
+        _err.print(f"[bold red]Error:[/bold red] graph file not found: {graph_path}")
         sys.exit(1)
 
     try:
@@ -69,7 +76,7 @@ def main(argv=None):
     from .app import create_app
 
     with _out.status("[dim]Loading graph…[/dim]", spinner="dots"):
-        session = GraphSession.from_file(args.graph)
+        session = GraphSession.from_file(graph_path)
     stats = session.get_stats()
     _out.print(
         f"[bold green]✓[/bold green] Graph loaded — "

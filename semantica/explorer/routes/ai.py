@@ -260,6 +260,11 @@ class InstrumentVariable(BaseModel):
     custodian_department: str = ""
     normative: str = ""
     rationale: str = ""
+    operationalization: str = ""
+    data_notes: str = ""
+    data_classification: str = ""
+    source_count: int = 0
+    review_status: str = ""
 
 
 class SuggestInstrumentResponse(BaseModel):
@@ -276,6 +281,8 @@ Para cada variable seleccionada debes generar:
 1. Una pregunta sugerida en español, lista para usar en un formulario (Kobo/Google Forms).
 2. Las opciones de respuesta, tomadas EXCLUSIVAMENTE del clasificador del concepto.
 3. Una justificación breve de por qué esa variable es necesaria para la política descrita.
+4. Una nota de operativización: cómo implementar la captura en campo (formato, frecuencia, unidad de análisis, consideraciones prácticas).
+5. Una nota explicativa para el planificador: qué debe saber al usar esta variable (limitaciones, sensibilidad, calidad esperada, advertencias).
 
 Reglas estrictas:
 - NO inventes opciones de respuesta que no estén en el clasificador del concepto.
@@ -283,13 +290,17 @@ Reglas estrictas:
 - NO incluyas variables que no estén en el catálogo proporcionado.
 - Prioriza variables que ya tienen estandarización (standard, classifier).
 - Máximo 15 variables por instrumento.
+- La operativización debe ser práctica y específica (ej: "capturar en años cumplidos, no en rangos").
+- La nota explicativa debe alertar sobre riesgos (ej: "variable sensible, requiere consentimiento informado").
 - Responde en JSON válido con esta estructura:
 {
   "variables": [
     {
       "name": "<nombre canónico del concepto>",
       "suggested_question": "<pregunta en español>",
-      "rationale": "<por qué es relevante para esta política>"
+      "rationale": "<por qué es relevante para esta política>",
+      "operationalization": "<cómo capturar en campo>",
+      "data_notes": "<qué debe saber el planificador>"
     }
   ],
   "summary": "<breve resumen del instrumento sugerido>"
@@ -311,6 +322,8 @@ async def suggest_instrument(body: SuggestInstrumentRequest):
 
     catalog_lines = []
     for c in concepts_data.get("concepts", []):
+        if c.get("review_status") == "deprecated":
+            continue
         line = f"- {c['name']}"
         if c.get("standard"):
             line += f" (estándar: {c['standard']})"
@@ -381,6 +394,11 @@ Selecciona las variables relevantes para monitorear esta política y genera el i
             custodian_department=concept_detail.get("custodian_department", "-"),
             normative=concept_detail.get("normative", "-"),
             rationale=var.get("rationale", ""),
+            operationalization=var.get("operationalization", ""),
+            data_notes=var.get("data_notes", ""),
+            data_classification=concept_detail.get("data_classification", "publico"),
+            source_count=len(concept_detail.get("fields", [])),
+            review_status=concept_detail.get("review_status", "approved"),
         ))
 
     return SuggestInstrumentResponse(

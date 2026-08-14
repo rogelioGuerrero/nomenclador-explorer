@@ -1614,6 +1614,35 @@ class ContextGraph:
                 )
         return True
 
+    def find_inferred_edges(self) -> List[ContextEdge]:
+        """Return all edges marked as inferred."""
+        with self._lock:
+            return [e for e in self.edges if e.metadata.get("inferred")]
+
+    def remove_edge(self, edge_id: str) -> bool:
+        """Remove a single edge by edge_id. Returns True if removed."""
+        with self._lock:
+            original_len = len(self.edges)
+            edge = next((e for e in self.edges if e.edge_id == edge_id), None)
+            if edge is None:
+                return False
+            self.edges = [e for e in self.edges if e.edge_id != edge_id]
+            self.edge_type_index[edge.edge_type] = [
+                e for e in self.edge_type_index.get(edge.edge_type, []) if e.edge_id != edge_id
+            ]
+            self._adjacency[edge.source_id] = [
+                e for e in self._adjacency.get(edge.source_id, []) if e.edge_id != edge_id
+            ]
+            removed = len(self.edges) < original_len
+        if removed and getattr(self, "mutation_callback", None) and not getattr(
+            self, "_suspend_mutation_callback", False
+        ):
+            try:
+                self.mutation_callback("REMOVE_EDGE", edge.edge_id, edge.to_dict())
+            except Exception as e:
+                self.logger.warning(f"Audit trail callback failed for edge {edge.edge_id}: {e}")
+        return removed
+
     # --- Builder Methods (Legacy/Utility) ---
 
     def build_from_conversations(

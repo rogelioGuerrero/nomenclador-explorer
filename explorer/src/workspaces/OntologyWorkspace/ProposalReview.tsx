@@ -401,7 +401,7 @@ export function ProposalReview({ proposalId }: { proposalId: string }) {
                     </span>
                   </div>
                   <div style={{ color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>{comment.text}</div>
-                  <div style={{ color: "#5a7a9a", fontSize: "10px" }}>
+                  <div style={{ color: "var(--ws-text-muted)", fontSize: "10px" }}>
                     {new Date(comment.created_at).toLocaleString()}
                   </div>
                 </div>
