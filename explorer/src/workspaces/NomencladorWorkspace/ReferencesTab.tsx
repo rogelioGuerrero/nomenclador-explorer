@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Loader2, Search, FileText, BookOpen, RefreshCw, GitBranch } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Loader2, Search, FileText, BookOpen, RefreshCw, GitBranch, Upload, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 type Normative = {
   id: string;
@@ -61,6 +61,10 @@ export function ReferencesTab() {
   const [lineageData, setLineageData] = useState<LineageResponse | null>(null);
   const [lineageLoading, setLineageLoading] = useState(false);
   const [lineageError, setLineageError] = useState("");
+  const [uploadTags, setUploadTags] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadFeedback, setUploadFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function load() {
@@ -115,8 +119,36 @@ export function ReferencesTab() {
     }
   }
 
+  async function handleNormativeUpload(file: File) {
+    setUploading(true);
+    setUploadFeedback(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const tagsParam = uploadTags.trim();
+      const url = `/api/governance/normative/upload${tagsParam ? `?tags=${encodeURIComponent(tagsParam)}` : ""}`;
+      const res = await fetch(url, { method: "POST", body: formData });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text.substring(0, 200)}`);
+      }
+      const data = await res.json();
+      setUploadFeedback({
+        ok: true,
+        msg: `"${data.source}" ingestado: ${data.chunks_ingested} fragmentos · corpus total: ${data.corpus_total_chunks}`,
+      });
+      // Reload chunks
+      const chunksRes = await fetch("/api/nomenclador/rag/chunks").then((r) => r.ok ? r.json() : null);
+      if (chunksRes) setChunks(chunksRes.chunks || []);
+    } catch (e) {
+      setUploadFeedback({ ok: false, msg: e instanceof Error ? e.message : "Error al subir documento" });
+    } finally {
+      setUploading(false);
+      setTimeout(() => setUploadFeedback(null), 6000);
+    }
+  }
+
   async function runLineageSearch() {
-    if (!lineageQuery.trim()) return;
     setLineageLoading(true);
     setLineageError("");
     setLineageData(null);
@@ -161,6 +193,69 @@ export function ReferencesTab() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 1100 }}>
+      {/* Upload normative document */}
+      <div className="ws-card">
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <Upload size={20} color="var(--ws-amber)" />
+          <h3 style={{ margin: 0, fontSize: "15px", color: "var(--ws-text)" }}>
+            Cargar documento normativo
+          </h3>
+        </div>
+        <p style={{ margin: "0 0 14px 0", fontSize: "12px", color: "var(--ws-text-muted)", lineHeight: 1.5 }}>
+          Sube leyes, reglamentos o manuales técnicos. El agent hará chunking + embeddings y
+          buscará respaldo para las variables del nomenclador automáticamente.
+        </p>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input
+            type="text"
+            placeholder="Tags (conceptos): sexo, edad, fecha_nacimiento…"
+            value={uploadTags}
+            onChange={(e) => setUploadTags(e.target.value)}
+            style={{
+              background: "var(--ws-surface)", border: "1px solid var(--ws-border)",
+              borderRadius: 8, padding: "10px 14px", color: "var(--ws-text)",
+              fontSize: "13px", flex: 1,
+            }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt,.md,.text"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleNormativeUpload(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            style={{
+              background: "var(--ws-amber-soft)", border: "1px solid rgba(242,182,109,0.3)",
+              borderRadius: 8, padding: "8px 18px", color: "var(--ws-amber)",
+              fontSize: "13px", fontWeight: 600, cursor: uploading ? "wait" : "pointer",
+              display: "inline-flex", alignItems: "center", gap: 6,
+              opacity: uploading ? 0.5 : 1,
+            }}
+          >
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            {uploading ? "Procesando…" : "Subir documento"}
+          </button>
+        </div>
+        {uploadFeedback && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 8,
+            background: uploadFeedback.ok ? "var(--ws-green-soft)" : "rgba(255,157,175,0.08)",
+            border: `1px solid ${uploadFeedback.ok ? "rgba(76,195,138,0.2)" : "rgba(255,157,175,0.18)"}`,
+            fontSize: "12px", color: uploadFeedback.ok ? "var(--ws-green)" : "#ffb4c2",
+          }}>
+            {uploadFeedback.ok ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}
+            {uploadFeedback.msg}
+          </div>
+        )}
+      </div>
+
       {/* RAG Search */}
       <div className="ws-card">
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
