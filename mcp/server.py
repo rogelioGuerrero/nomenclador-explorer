@@ -207,6 +207,11 @@ def _write(obj: Any) -> None:
     try:
         sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
         sys.stdout.flush()
+    except UnicodeEncodeError:
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+        sys.stdout.write(json.dumps(obj, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
     except (BrokenPipeError, OSError):
         log.info("Client disconnected — exiting MCP server")
         sys.exit(0)
