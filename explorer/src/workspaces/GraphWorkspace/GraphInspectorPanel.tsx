@@ -311,7 +311,7 @@ export function GraphInspectorPanel({
           <div style={{ width: 14, height: 14, borderRadius: "50%", background: GRAPH_THEME.ui.timeline.playheadSoft }} />
         </div>
         <p style={{ color: GRAPH_THEME.ui.text.muted, fontSize: 14, margin: 0, lineHeight: 1.6 }}>
-          Search for a node or click one in the canvas to inspect its properties.
+          Busca un nodo o haz clic en uno del lienzo para inspeccionar sus propiedades.
         </p>
       </div>
     );

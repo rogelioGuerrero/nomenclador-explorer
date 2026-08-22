@@ -145,7 +145,7 @@ export function OntologyEditor() {
 
   const addProperty = useCallback(() => {
     if (nodes.length < 2) {
-      alert("Add at least two classes before creating a property edge.");
+      alert("Añade al menos dos clases antes de crear una propiedad.");
       return;
     }
     const newId = `prop_${Date.now()}`;
@@ -199,7 +199,7 @@ export function OntologyEditor() {
 
   const saveDraft = useCallback(async () => {
     if (!ontologyUri) {
-      alert("Please select an ontology first");
+      alert("Selecciona una ontología primero");
       return;
     }
     setIsSaving(true);
@@ -211,16 +211,16 @@ export function OntologyEditor() {
           ontology_uri: ontologyUri,
           diff: draftDiff,
           author: "user",
-          summary: "Visual editor changes",
+          summary: "Cambios del editor visual",
         }),
       });
       if (response.ok) {
         const data = await response.json();
-        alert(`Draft saved: ${data.draft_id}`);
+        alert(`Borrador guardado: ${data.draft_id}`);
       }
     } catch (error) {
       console.error("Failed to save draft:", error);
-      alert("Failed to save draft");
+      alert("Error al guardar el borrador");
     } finally {
       setIsSaving(false);
     }
@@ -262,7 +262,7 @@ export function OntologyEditor() {
   const renameSelected = useCallback(() => {
     const target = showContext?.element ?? selectedElement;
     if (target && !("source" in target)) {
-      const newLabel = prompt("Enter new name:", String(target.data.label ?? ""));
+      const newLabel = prompt("Introduce el nuevo nombre:", String(target.data.label ?? ""));
       if (newLabel) {
         setNodes((nds) =>
           nds.map((n) => (n.id === target.id ? { ...n, data: { ...n.data, label: newLabel } } : n))
@@ -355,12 +355,12 @@ export function OntologyEditor() {
     <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#07111f" }}>
       <div style={toolbarStyle}>
         <select
-          aria-label="Active ontology"
+          aria-label="Ontología activa"
           value={ontologyUri}
           onChange={(event) => setOntologyUri(event.target.value)}
           style={selectStyle}
         >
-          <option value="">Select ontology...</option>
+          <option value="">Seleccionar ontología...</option>
           {registry.map((entry) => (
             <option key={entry.uri} value={entry.uri}>
               {entry.name || entry.uri}
@@ -369,32 +369,32 @@ export function OntologyEditor() {
         </select>
         <button style={toolbarButtonStyle} onClick={addClass}>
           <Plus size={14} />
-          Add Class
+          Añadir clase
         </button>
         <button style={toolbarButtonStyle} onClick={addProperty} disabled={nodes.length < 2}>
           <GitBranch size={14} />
-          Add Property
+          Añadir propiedad
         </button>
         <button style={toolbarButtonStyle} onClick={addIndividual}>
           <User size={14} />
-          Add Individual
+          Añadir individuo
         </button>
         <button style={toolbarButtonStyle} onClick={addRestriction}>
           <Shield size={14} />
-          Add Restriction
+          Añadir restricción
         </button>
         <button style={toolbarButtonStyle} onClick={addAxiom}>
           <FileText size={14} />
-          Add Axiom
+          Añadir axioma
         </button>
         <button style={toolbarButtonStyle} onClick={autoLayout}>
           <Layout size={14} />
-          Auto Layout
+          Diseño automático
         </button>
         <div style={{ flex: 1 }} />
         <button style={toolbarButtonStyle} onClick={saveDraft} disabled={isSaving}>
           <Send size={14} />
-          {isSaving ? "Saving..." : "Propose"}
+          {isSaving ? "Guardando..." : "Proponer"}
         </button>
       </div>
 
@@ -422,11 +422,11 @@ export function OntologyEditor() {
           <div style={{ ...contextMenuStyle, left: showContext.x, top: showContext.y }}>
             <div style={contextItemStyle} onClick={renameSelected}>
               <Pencil size={14} />
-              Rename
+              Renombrar
             </div>
             <div style={contextItemStyle} onClick={deleteSelected}>
               <Trash2 size={14} />
-              Delete
+              Eliminar
             </div>
           </div>
         )}
@@ -434,7 +434,7 @@ export function OntologyEditor() {
         {selectedElement && (
           <div style={detailPanelStyle}>
             <h3 style={{ margin: "0 0 16px", color: "#ebf3ff", fontSize: "16px" }}>
-              {"source" in selectedElement ? "Property Details" : "Class Details"}
+              {"source" in selectedElement ? "Detalle de propiedad" : "Detalle de clase"}
             </h3>
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
@@ -448,7 +448,7 @@ export function OntologyEditor() {
               <>
                 <div style={{ marginBottom: "12px" }}>
                   <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                    Label
+                    Etiqueta
                   </label>
                   <input
                     type="text"
@@ -482,7 +482,7 @@ export function OntologyEditor() {
                 </div>
                 <div style={{ marginBottom: "12px" }}>
                   <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                    Type
+                    Tipo
                   </label>
                   <div style={{ color: "#ebf3ff", fontSize: "13px" }}>
                     {selectedElement.data.type || "owl:Class"}

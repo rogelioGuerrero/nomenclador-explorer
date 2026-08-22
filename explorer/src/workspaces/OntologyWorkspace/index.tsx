@@ -25,11 +25,11 @@ export type OntologyHubTab =
 const TAB_PARAM = "ontologyTab";
 
 const TABS: { id: OntologyHubTab; label: string; icon: typeof GitMerge }[] = [
-  { id: "registry", label: "Registry", icon: BookMarked },
+  { id: "registry", label: "Registro", icon: BookMarked },
   { id: "editor", label: "Editor", icon: Sliders },
-  { id: "versions", label: "Versions", icon: Layers },
-  { id: "alignments", label: "Alignments", icon: GitMerge },
-  { id: "health", label: "Health", icon: HeartPulse },
+  { id: "versions", label: "Versiones", icon: Layers },
+  { id: "alignments", label: "Alineamientos", icon: GitMerge },
+  { id: "health", label: "Salud", icon: HeartPulse },
   { id: "shacl", label: "SHACL", icon: Shield },
 ];
 

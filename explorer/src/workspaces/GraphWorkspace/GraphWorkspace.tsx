@@ -159,13 +159,13 @@ const loadTemporalOverlayPlugin = () => import("./plugins/temporalOverlayPlugin"
 const EMPTY_PATH: string[] = [];
 const COMPACT_TOOLBAR_CLUSTER_IDS = new Set(["camera", "utility"]);
 const ENTITY_VISUAL_KEY: Array<{ shape: GraphEntityShapeVariant; label: string }> = [
-  { shape: "concept", label: "Concept" },
-  { shape: "field", label: "Field" },
-  { shape: "classifier", label: "Classifier" },
-  { shape: "operation", label: "Operation" },
-  { shape: "source", label: "Source" },
-  { shape: "normative", label: "Normative" },
-  { shape: "entity", label: "Other" },
+  { shape: "concept", label: "Concepto" },
+  { shape: "field", label: "Campo" },
+  { shape: "classifier", label: "Clasificador" },
+  { shape: "operation", label: "Operación" },
+  { shape: "source", label: "Fuente" },
+  { shape: "normative", label: "Normativa" },
+  { shape: "entity", label: "Otro" },
 ];
 const DEBUG_GRAPH_WORKSPACE = import.meta.env.DEV;
 
@@ -308,11 +308,11 @@ function SearchCommandBar({
       <input
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Search command, node, or concept"
-        aria-label="Search graph nodes"
+        placeholder="Buscar comando, nodo o concepto"
+        aria-label="Buscar nodos del grafo"
       />
-      <button type="submit" disabled={disabled} aria-label="Search for the current query">
-        Search
+      <button type="submit" disabled={disabled} aria-label="Buscar la consulta actual">
+        Buscar
       </button>
     </form>
   );
@@ -320,7 +320,7 @@ function SearchCommandBar({
 
 function EntityVisualKey() {
   return (
-    <div className="explore-entity-key" aria-label="Node visual key">
+    <div className="explore-entity-key" aria-label="Leyenda visual de nodos">
       {ENTITY_VISUAL_KEY.map((item) => (
         <div key={item.shape} className="explore-entity-key-item">
           <span className="explore-entity-key-mark" data-shape={item.shape} />
@@ -1718,7 +1718,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
         scores: EMPTY_DISTANCE_RECORD,
         count: 0,
         status: distanceMode === "semantic" ? "unavailable" : "idle",
-        error: distanceMode === "semantic" ? "Select a Full Graph node to load semantic distance." : null,
+        error: distanceMode === "semantic" ? "Selecciona un nodo del grafo completo para cargar distancia semántica." : null,
       });
       return;
     }
@@ -1824,7 +1824,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
         heatmapSaturationMode: undefined,
         semanticNeighborCount: 0,
         status: "unavailable",
-        error: "Distance intelligence is available in Full Graph mode.",
+        error: "La inteligencia de distancia está disponible en modo grafo completo.",
       };
     }
 
@@ -1844,7 +1844,7 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
         heatmapSaturationMode: undefined,
         semanticNeighborCount: 0,
         status: "unavailable",
-        error: "Select a node to activate distance intelligence.",
+        error: "Selecciona un nodo para activar la inteligencia de distancia.",
       };
     }
 
@@ -2441,18 +2441,18 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
     return [
       {
         id: "view-full",
-        label: "Full Graph",
-        title: "Return to the full graph context",
+        label: "Grafo completo",
+        title: "Volver al contexto del grafo completo",
         icon: Layers3,
         active: viewMode === "full",
         onClick: () => requestViewMode("full"),
       },
       {
         id: "view-grouped",
-        label: "Grouped View",
+        label: "Vista agrupada",
         title: displayState.groupedViewAvailable
-          ? "Compress dense structure into detected communities"
-          : (displayState.groupedViewReason ?? "Grouped view is unavailable until communities can be detected"),
+          ? "Comprimir estructura densa en comunidades detectadas"
+          : (displayState.groupedViewReason ?? "Vista agrupada no disponible hasta que se detecten comunidades"),
         icon: GitBranch,
         active: viewMode === "grouped",
         disabled: !displayState.groupedViewAvailable,
@@ -2460,10 +2460,10 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
       },
       {
         id: "view-focused",
-        label: "Focused",
+        label: "Enfoque",
         title: canActivateFocusedMode
-          ? "Inspect the selected node in a focused local graph"
-          : (focusedSelectionResolution.reason ?? "Focused mode is unavailable for the current selection"),
+          ? "Inspeccionar el nodo seleccionado en un grafo local enfocado"
+          : (focusedSelectionResolution.reason ?? "Modo enfocado no disponible para la selección actual"),
         icon: Focus,
         active: viewMode === "focused",
         disabled: viewMode !== "focused" && !canActivateFocusedMode,
@@ -2483,27 +2483,27 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
   const cameraToolbarItems = useMemo<GraphToolbarItem[]>(() => [
     {
       id: "zoom-in",
-      label: "Zoom In",
-      title: "Zoom in (or scroll up on the canvas)",
-      ariaLabel: "Zoom in",
+      label: "Acercar",
+      title: "Acercar (o scroll hacia arriba en el lienzo)",
+      ariaLabel: "Acercar",
       icon: ZoomIn,
       compact: true,
       onClick: () => sceneRef.current?.zoomIn(),
     },
     {
       id: "zoom-out",
-      label: "Zoom Out",
-      title: "Zoom out (or scroll down on the canvas)",
-      ariaLabel: "Zoom out",
+      label: "Alejar",
+      title: "Alejar (o scroll hacia abajo en el lienzo)",
+      ariaLabel: "Alejar",
       icon: ZoomOut,
       compact: true,
       onClick: () => sceneRef.current?.zoomOut(),
     },
     {
       id: "fit-view",
-      label: "Fit",
-      title: "Reset the camera to fit the whole graph",
-      ariaLabel: "Fit view",
+      label: "Ajustar",
+      title: "Restablecer la cámara para ajustar todo el grafo",
+      ariaLabel: "Ajustar vista",
       icon: Maximize2,
       compact: true,
       onClick: () => sceneRef.current?.fitView(),
@@ -2513,8 +2513,8 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
   const layoutToolbarItems = useMemo<GraphToolbarItem[]>(() => [
     {
       id: "layout-toggle",
-      label: isLayoutRunning ? "Pause" : "Run",
-      title: "Toggle the layout worker",
+      label: isLayoutRunning ? "Pausar" : "Ejecutar",
+      title: "Alternar el trabajador de diseño",
       icon: isLayoutRunning ? Pause : Play,
       active: isLayoutRunning,
       disabled: showLoadingOverlay,
@@ -2530,16 +2530,16 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
     return [
       {
         id: "collapse-neighborhood",
-        label: "Collapse",
-        title: "Hide lower-priority fanout around the selected node",
+        label: "Colapsar",
+        title: "Ocultar fanout de menor prioridad alrededor del nodo seleccionado",
         icon: Eye,
         disabled: !selectedNodeState.canCollapseNeighborhood || selectedNodeState.isNeighborhoodCollapsed,
         onClick: () => handlePluginAction({ type: "collapseNeighborhood" }),
       },
       {
         id: "expand-neighborhood",
-        label: "Expand",
-        title: "Restore the collapsed local neighborhood",
+        label: "Expandir",
+        title: "Restaurar el vecindario local colapsado",
         icon: Users,
         disabled: !selectedNodeState.isNeighborhoodCollapsed,
         onClick: () => handlePluginAction({ type: "expandNeighborhood" }),
@@ -2562,9 +2562,9 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
   const utilityToolbarItems = useMemo<GraphToolbarItem[]>(() => [
     {
       id: "reload",
-      label: "Reload",
-      title: "Reload the graph data",
-      ariaLabel: "Reload graph data",
+      label: "Recargar",
+      title: "Recargar los datos del grafo",
+      ariaLabel: "Recargar datos del grafo",
       icon: RefreshCw,
       compact: true,
       disabled: showLoadingOverlay,
@@ -2582,10 +2582,10 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
     return [
       {
         id: "ego-mode",
-        label: egoModeEnabled ? `Ego (${egoMaxHops}h)` : "Ego Mode",
+        label: egoModeEnabled ? `Ego (${egoMaxHops}h)` : "Modo Ego",
         title: egoModeEnabled
-          ? `Egocentric view: ${egoMaxHops} hops depth (click to toggle off)`
-          : "Show depth-of-field fading around the selected node",
+          ? `Vista egocéntrica: ${egoMaxHops} saltos de profundidad (clic para desactivar)`
+          : "Mostrar desvanecimiento de profundidad alrededor del nodo seleccionado",
         active: egoModeEnabled,
         onClick: () => {
           setEgoModeEnabled((v) => !v);
@@ -2595,10 +2595,10 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
       },
       {
         id: "heatmap",
-        label: "Heatmap",
+        label: "Mapa de calor",
         title: heatmapEnabled
-          ? "Distance heatmap active (click to toggle off)"
-          : "Color nodes by hop distance from selected node",
+          ? "Mapa de calor de distancia activo (clic para desactivar)"
+          : "Colorear nodos por distancia de saltos desde el nodo seleccionado",
         active: heatmapEnabled,
         onClick: () => {
           setHeatmapEnabled((v) => !v);
@@ -2608,8 +2608,8 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
       },
       {
         id: "dist-structural",
-        label: "Structural",
-        title: "Color edges by structural (hop) distance",
+        label: "Estructural",
+        title: "Colorear aristas por distancia estructural (saltos)",
         active: distanceMode === "structural",
         onClick: () => {
           setEgoModeEnabled(false);
@@ -2619,8 +2619,8 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
       },
       {
         id: "dist-semantic",
-        label: "Semantic",
-        title: "Color edges by semantic similarity to selected node",
+        label: "Semántico",
+        title: "Colorear aristas por similitud semántica al nodo seleccionado",
         active: distanceMode === "semantic",
         onClick: () => {
           setEgoModeEnabled(false);
@@ -2634,12 +2634,12 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
   const toolbarClusters = useMemo<GraphToolbarGroup[]>(() => [
     {
       id: "camera",
-      label: "Camera",
+      label: "Cámara",
       items: cameraToolbarItems,
     },
     {
       id: "layout",
-      label: "Layout",
+      label: "Diseño",
       items: layoutToolbarItems,
     },
     {
@@ -2649,17 +2649,17 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
     },
     {
       id: "distance",
-      label: "Distance",
+      label: "Distancia",
       items: distanceToolbarItems,
     },
     {
       id: "analysis",
-      label: "Analysis",
+      label: "Análisis",
       items: analysisToolbarItems,
     },
     {
       id: "utility",
-      label: "Utility",
+      label: "Utilidad",
       items: utilityToolbarItems,
     },
   ].filter((group) => group.items.length > 0), [
@@ -2756,10 +2756,10 @@ export function GraphWorkspace({ externalFocusNodeId, externalFocusToken }: Grap
                     <MetricChip>{getGraphLoadTitle(loadingProgress.phase)}</MetricChip>
                   ) : null}
                   {summary ? (
-                    <MetricChip>{summary.nodeCount.toLocaleString()} nodes · {summary.edgeCount.toLocaleString()} edges</MetricChip>
+                    <MetricChip>{summary.nodeCount.toLocaleString()} nodos · {summary.edgeCount.toLocaleString()} aristas</MetricChip>
                   ) : null}
                   {activeNodeCount !== null ? (
-                    <MetricChip tone="success">{activeNodeCount.toLocaleString()} active</MetricChip>
+                    <MetricChip tone="success">{activeNodeCount.toLocaleString()} activos</MetricChip>
                   ) : null}
                   {focusedSummary ? <MetricChip tone="warm">{focusedSummary}</MetricChip> : null}
                 </div>

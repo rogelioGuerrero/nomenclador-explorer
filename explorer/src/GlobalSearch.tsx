@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Loader2, Network, BookOpen, ArrowRight } from "lucide-react";
+import { Search, Loader2, Network, BookOpen, ArrowRight, X } from "lucide-react";
 
 type GraphResult = {
   node: { id: string; type: string; content: string; properties: Record<string, unknown> };
@@ -28,11 +28,15 @@ export function GlobalSearch({ onNavigateGraph, onNavigateConcept }: GlobalSearc
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const closeModal = useCallback(() => {
+    setModalOpen(false);
+    setQuery("");
+    setResults(null);
+  }, []);
 
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) {
@@ -72,157 +76,185 @@ export function GlobalSearch({ onNavigateGraph, onNavigateConcept }: GlobalSearc
   }, [query, doSearch]);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
-        setExpanded(false);
+    function onKeydown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setModalOpen(true);
+      }
+      if (e.key === "Escape" && modalOpen) {
+        closeModal();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("keydown", onKeydown);
+    return () => document.removeEventListener("keydown", onKeydown);
+  }, [modalOpen, closeModal]);
 
   useEffect(() => {
-    if (expanded && inputRef.current) {
+    if (modalOpen && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [expanded]);
+  }, [modalOpen]);
 
   const hasResults = results && (results.graph.length > 0 || results.concepts.length > 0);
 
   return (
-    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
-      {/* Collapsed: icon button. Expanded: full input. */}
-      {expanded ? (
-        <div style={{
-          display: "flex", alignItems: "center", gap: 6,
-          padding: "6px 10px", borderRadius: 8,
+    <>
+      <button
+        onClick={() => setModalOpen(true)}
+        title="Buscar (Ctrl+K)"
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          width: "100%", padding: "8px", borderRadius: 8,
           background: "rgba(0,0,0,0.25)", border: "1px solid var(--ws-border)",
-        }}>
-          <Search size={14} color="var(--ws-text-dim)" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-            onFocus={() => setOpen(true)}
-            placeholder="Buscar…"
-            style={{
-              flex: 1, background: "none", border: "none", outline: "none",
-              color: "var(--ws-text)", fontSize: 12, fontFamily: "inherit", minWidth: 0,
-            }}
-          />
-          {loading && <Loader2 size={12} className="animate-spin" color="var(--ws-text-dim)" />}
-        </div>
-      ) : (
-        <button
-          onClick={() => setExpanded(true)}
-          title="Buscar en grafo y conceptos"
+          cursor: "pointer", color: "var(--ws-text-dim)",
+        }}
+      >
+        <Search size={16} />
+      </button>
+
+      {modalOpen && (
+        <div
+          onClick={closeModal}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: "100%", padding: "8px", borderRadius: 8,
-            background: "rgba(0,0,0,0.25)", border: "1px solid var(--ws-border)",
-            cursor: "pointer", color: "var(--ws-text-dim)",
+            position: "fixed", inset: 0, zIndex: 9998,
+            background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "flex-start", justifyContent: "center",
+            paddingTop: "15vh",
           }}
         >
-          <Search size={16} />
-        </button>
-      )}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="search-modal"
+            style={{
+              width: "min(560px, 90vw)", maxHeight: "70vh",
+              borderRadius: 14, overflow: "hidden",
+              background: "var(--ws-bg-elevated, #0d1117)",
+              border: "1px solid var(--ws-border)",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+              display: "flex", flexDirection: "column",
+            }}
+          >
+            {/* Input header */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: "14px 18px", borderBottom: "1px solid var(--ws-border)",
+            }}>
+              <Search size={18} color="var(--ws-text-dim)" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar en grafo y conceptos…"
+                style={{
+                  flex: 1, background: "none", border: "none", outline: "none",
+                  color: "var(--ws-text)", fontSize: 15, fontFamily: "inherit",
+                }}
+              />
+              {loading && <Loader2 size={16} className="animate-spin" color="var(--ws-text-dim)" />}
+              <button
+                onClick={closeModal}
+                title="Cerrar"
+                style={{
+                  border: "none", background: "none", cursor: "pointer",
+                  color: "var(--ws-text-dim)", padding: 4, borderRadius: 4,
+                  display: "flex", alignItems: "center",
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
 
-      {open && query.trim().length >= 2 && (
-        <div style={{
-          position: "absolute", top: "calc(100% + 4px)", left: 0,
-          width: 320,
-          zIndex: 100, borderRadius: 10, overflow: "hidden",
-          background: "var(--ws-bg-elevated, #161b22)", border: "1px solid var(--ws-border)",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-          maxHeight: 400, overflowY: "auto",
-        }}>
-          {loading && (
-            <div style={{ padding: 16, textAlign: "center", color: "var(--ws-text-dim)", fontSize: 12 }}>
-              <Loader2 size={14} className="animate-spin" style={{ display: "inline-block", marginRight: 6 }} />
-              Buscando…
-            </div>
-          )}
-          {!loading && !hasResults && (
-            <div style={{ padding: 16, textAlign: "center", color: "var(--ws-text-dim)", fontSize: 12 }}>
-              No se encontraron resultados para "{query}"
-            </div>
-          )}
-          {!loading && hasResults && (
-            <>
-              {results!.concepts.length > 0 && (
-                <div>
-                  <div style={{
-                    padding: "6px 12px", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: 1, color: "var(--ws-text-dim)",
-                    background: "rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 6,
-                  }}>
-                    <BookOpen size={11} /> Conceptos del nomenclador
-                  </div>
-                  {results!.concepts.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => { onNavigateConcept(c.name); setOpen(false); setExpanded(false); setQuery(""); }}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8, width: "100%",
-                        padding: "8px 12px", cursor: "pointer",
-                        background: "none", border: "none", textAlign: "left",
-                        color: "var(--ws-text)", fontSize: 12,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600 }}>{c.name}</div>
-                        {c.standard && (
-                          <div style={{ fontSize: 10, color: "var(--ws-text-dim)" }}>{c.standard}</div>
-                        )}
-                      </div>
-                      <ArrowRight size={12} color="var(--ws-text-dim)" />
-                    </button>
-                  ))}
+            {/* Results */}
+            <div style={{ overflowY: "auto", flex: 1 }}>
+              {query.trim().length < 2 && (
+                <div style={{ padding: 24, textAlign: "center", color: "var(--ws-text-dim)", fontSize: 13 }}>
+                  Escribe al menos 2 caracteres para buscar
                 </div>
               )}
-              {results!.graph.length > 0 && (
-                <div>
-                  <div style={{
-                    padding: "6px 12px", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
-                    letterSpacing: 1, color: "var(--ws-text-dim)",
-                    background: "rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 6,
-                  }}>
-                    <Network size={11} /> Nodos del grafo
-                  </div>
-                  {results!.graph.map((g) => (
-                    <button
-                      key={g.node.id}
-                      onClick={() => { onNavigateGraph(g.node.id); setOpen(false); setExpanded(false); setQuery(""); }}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 8, width: "100%",
-                        padding: "8px 12px", cursor: "pointer",
-                        background: "none", border: "none", textAlign: "left",
-                        color: "var(--ws-text)", fontSize: 12,
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
-                    >
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                          {g.node.content || g.node.id}
-                        </div>
-                        <div style={{ fontSize: 10, color: "var(--ws-text-dim)" }}>
-                          {g.node.type} · {g.node.id.substring(0, 30)}
-                        </div>
-                      </div>
-                      <ArrowRight size={12} color="var(--ws-text-dim)" />
-                    </button>
-                  ))}
+              {query.trim().length >= 2 && loading && (
+                <div style={{ padding: 24, textAlign: "center", color: "var(--ws-text-dim)", fontSize: 13 }}>
+                  <Loader2 size={16} className="animate-spin" style={{ display: "inline-block", marginRight: 8 }} />
+                  Buscando…
                 </div>
               )}
-            </>
-          )}
+              {query.trim().length >= 2 && !loading && !hasResults && (
+                <div style={{ padding: 24, textAlign: "center", color: "var(--ws-text-dim)", fontSize: 13 }}>
+                  No se encontraron resultados para "{query}"
+                </div>
+              )}
+              {query.trim().length >= 2 && !loading && hasResults && (
+                <>
+                  {results!.concepts.length > 0 && (
+                    <div>
+                      <div style={{
+                        padding: "8px 18px", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                        letterSpacing: 1, color: "var(--ws-text-dim)",
+                        background: "rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 6,
+                      }}>
+                        <BookOpen size={11} /> Conceptos del nomenclador
+                      </div>
+                      {results!.concepts.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => { onNavigateConcept(c.name); closeModal(); }}
+                          className="search-result-item"
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600 }}>{c.name}</div>
+                            {c.standard && (
+                              <div style={{ fontSize: 11, color: "var(--ws-text-dim)" }}>{c.standard}</div>
+                            )}
+                          </div>
+                          <ArrowRight size={14} color="var(--ws-text-dim)" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {results!.graph.length > 0 && (
+                    <div>
+                      <div style={{
+                        padding: "8px 18px", fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                        letterSpacing: 1, color: "var(--ws-text-dim)",
+                        background: "rgba(0,0,0,0.2)", display: "flex", alignItems: "center", gap: 6,
+                      }}>
+                        <Network size={11} /> Nodos del grafo
+                      </div>
+                      {results!.graph.map((g) => (
+                        <button
+                          key={g.node.id}
+                          onClick={() => { onNavigateGraph(g.node.id); closeModal(); }}
+                          className="search-result-item"
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {g.node.content || g.node.id}
+                            </div>
+                            <div style={{ fontSize: 11, color: "var(--ws-text-dim)" }}>
+                              {g.node.type} · {g.node.id.substring(0, 40)}
+                            </div>
+                          </div>
+                          <ArrowRight size={14} color="var(--ws-text-dim)" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer hint */}
+            <div style={{
+              padding: "8px 18px", borderTop: "1px solid var(--ws-border)",
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              fontSize: 11, color: "var(--ws-text-dim)",
+            }}>
+              <span>Esc para cerrar</span>
+              <span>Ctrl+K</span>
+            </div>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

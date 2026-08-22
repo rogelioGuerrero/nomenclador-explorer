@@ -57,12 +57,12 @@ export function VersionsTab() {
       if (response.ok) {
         const data = await response.json();
         setVersions(data);
-        if (response.status === 207) setError(data.message || "Warning: Partial success loading versions.");
+        if (response.status === 207) setError(data.message || "Aviso: Carga parcial de versiones.");
       } else {
-        setError(`Failed to load versions (${response.status})`);
+        setError(`Error al cargar versiones (${response.status})`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load versions.");
+      setError(err instanceof Error ? err.message : "Error al cargar versiones.");
     }
   }, [ontologyUri]);
 
@@ -73,12 +73,12 @@ export function VersionsTab() {
       if (response.ok) {
         const data = await response.json();
         setProposals(data);
-        if (response.status === 207) setError(data.message || "Warning: Partial success loading proposals.");
+        if (response.status === 207) setError(data.message || "Aviso: Carga parcial de propuestas.");
       } else {
-        setError(`Failed to load proposals (${response.status})`);
+        setError(`Error al cargar propuestas (${response.status})`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load proposals.");
+      setError(err instanceof Error ? err.message : "Error al cargar propuestas.");
     }
   }, []);
 
@@ -92,13 +92,13 @@ export function VersionsTab() {
           const propData = await propRes.json();
           if (!ignore) {
             setProposals(propData);
-            if (propRes.status === 207) setError(propData.message || "Warning: Partial success loading proposals.");
+            if (propRes.status === 207) setError(propData.message || "Aviso: Carga parcial de propuestas.");
           }
         } else if (!ignore) {
-          setError(`Failed to load proposals (${propRes.status})`);
+          setError(`Error al cargar propuestas (${propRes.status})`);
         }
       } catch (err) {
-        if (!ignore) setError(err instanceof Error ? err.message : "Failed to load proposals.");
+        if (!ignore) setError(err instanceof Error ? err.message : "Error al cargar propuestas.");
       }
 
       if (!ontologyUri) return;
@@ -108,13 +108,13 @@ export function VersionsTab() {
           const verData = await verRes.json();
           if (!ignore) {
             setVersions(verData);
-            if (verRes.status === 207) setError(verData.message || "Warning: Partial success loading versions.");
+            if (verRes.status === 207) setError(verData.message || "Aviso: Carga parcial de versiones.");
           }
         } else if (!ignore) {
-          setError((prev) => prev || `Failed to load versions (${verRes.status})`);
+          setError((prev) => prev || `Error al cargar versiones (${verRes.status})`);
         }
       } catch (err) {
-        if (!ignore) setError((prev) => prev || (err instanceof Error ? err.message : "Failed to load versions."));
+        if (!ignore) setError((prev) => prev || (err instanceof Error ? err.message : "Error al cargar versiones."));
       }
     }
     void fetchInitial();
@@ -130,16 +130,16 @@ export function VersionsTab() {
       if (response.ok) {
         if (response.status === 207) {
           const data = await response.json().catch(() => ({}));
-          setError(data.message || "Warning: Partial success approving proposal.");
+          setError(data.message || "Aviso: Aprobación parcial de la propuesta.");
         } else {
-          alert("Proposal approved");
+          alert("Propuesta aprobada");
         }
         loadProposals();
       } else {
-        setError(`Failed to approve proposal (${response.status})`);
+        setError(`Error al aprobar propuesta (${response.status})`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to approve proposal.");
+      setError(err instanceof Error ? err.message : "Error al aprobar la propuesta.");
     }
   }, [loadProposals]);
 
@@ -152,16 +152,16 @@ export function VersionsTab() {
       if (response.ok) {
         if (response.status === 207) {
           const data = await response.json().catch(() => ({}));
-          setError(data.message || "Warning: Partial success rejecting proposal.");
+          setError(data.message || "Aviso: Rechazo parcial de la propuesta.");
         } else {
-          alert("Proposal rejected");
+          alert("Propuesta rechazada");
         }
         loadProposals();
       } else {
-        setError(`Failed to reject proposal (${response.status})`);
+        setError(`Error al rechazar propuesta (${response.status})`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to reject proposal.");
+      setError(err instanceof Error ? err.message : "Error al rechazar la propuesta.");
     }
   }, [loadProposals]);
 
@@ -174,17 +174,17 @@ export function VersionsTab() {
       if (response.ok) {
         if (response.status === 207) {
           const data = await response.json().catch(() => ({}));
-          setError(data.message || "Warning: Partial success publishing proposal.");
+          setError(data.message || "Aviso: Publicación parcial de la propuesta.");
         } else {
-          alert("Proposal published");
+          alert("Propuesta publicada");
         }
         loadProposals();
         loadVersions();
       } else {
-        setError(`Failed to publish proposal (${response.status})`);
+        setError(`Error al publicar propuesta (${response.status})`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to publish proposal.");
+      setError(err instanceof Error ? err.message : "Error al publicar la propuesta.");
     }
   }, [loadProposals, loadVersions]);
 
@@ -203,13 +203,13 @@ export function VersionsTab() {
       });
       if (response.ok) {
         const data = await response.json();
-        if (response.status === 207) setError(data.message || "Warning: Partial success comparing versions.");
+        if (response.status === 207) setError(data.message || "Aviso: Comparación parcial de versiones.");
         setCompareResult(data);
       } else {
-        setError(`Failed to compare versions (${response.status})`);
+        setError(`Error al comparar versiones (${response.status})`);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to compare versions.");
+      setError(err instanceof Error ? err.message : "Error al comparar versiones.");
     } finally {
       setIsLoading(false);
     }
@@ -337,10 +337,10 @@ export function VersionsTab() {
   return (
     <div style={containerStyle}>
       <div style={headerStyle}>
-        <h1 style={titleStyle}>Versions & Change Proposals</h1>
+        <h1 style={titleStyle}>Versiones y propuestas de cambio</h1>
         <input
           type="text"
-          placeholder="Ontology URI"
+          placeholder="URI de la ontología"
           value={ontologyUri}
           onChange={(e) => setOntologyUri(e.target.value)}
           style={{ ...inputStyle, width: "300px", marginBottom: 0 }}
@@ -352,11 +352,11 @@ export function VersionsTab() {
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>
           <Layers size={16} />
-          Version History
+          Historial de versiones
         </h2>
         <div style={listStyle}>
           {versions.length === 0 ? (
-            <div style={{ color: "#8fa8c6", fontSize: "13px" }}>No versions found</div>
+            <div style={{ color: "#8fa8c6", fontSize: "13px" }}>No se encontraron versiones</div>
           ) : (
             versions.map((version) => (
               <div key={version.version_id} style={itemStyle}>
@@ -377,7 +377,7 @@ export function VersionsTab() {
                   }}
                 >
                   <ArrowRight size={12} />
-                  Compare
+                  Comparar
                 </button>
               </div>
             ))
@@ -388,11 +388,11 @@ export function VersionsTab() {
       <div style={sectionStyle}>
         <h2 style={sectionTitleStyle}>
           <GitMerge size={16} />
-          Change Proposals
+          Propuestas de cambio
         </h2>
         <div style={listStyle}>
           {proposals.length === 0 ? (
-            <div style={{ color: "#8fa8c6", fontSize: "13px" }}>No proposals found</div>
+            <div style={{ color: "#8fa8c6", fontSize: "13px" }}>No se encontraron propuestas</div>
           ) : (
             proposals.map((proposal) => (
               <div key={proposal.proposal_id} style={itemStyle}>
@@ -409,18 +409,18 @@ export function VersionsTab() {
                   <div style={{ display: "flex", gap: "6px" }}>
                     <button style={buttonStyle} onClick={() => approveProposal(proposal.proposal_id)}>
                       <CheckCircle size={12} />
-                      Approve
+                      Aprobar
                     </button>
                     <button style={buttonStyle} onClick={() => rejectProposal(proposal.proposal_id)}>
                       <XCircle size={12} />
-                      Reject
+                      Rechazar
                     </button>
                   </div>
                 )}
                 {proposal.state === "approved" && (
                   <button style={buttonStyle} onClick={() => publishProposal(proposal.proposal_id)}>
                     <Send size={12} />
-                    Publish
+                    Publicar
                   </button>
                 )}
                 <button
@@ -431,7 +431,7 @@ export function VersionsTab() {
                   }}
                 >
                   <FileText size={12} />
-                  Details
+                  Detalles
                 </button>
               </div>
             ))
@@ -443,20 +443,20 @@ export function VersionsTab() {
         <div style={modalOverlayStyle} onClick={() => setShowProposalModal(false)}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, color: "#ebf3ff", fontSize: "16px" }}>Proposal Details</h3>
+              <h3 style={{ margin: 0, color: "#ebf3ff", fontSize: "16px" }}>Detalles de la propuesta</h3>
               <button onClick={() => setShowProposalModal(false)} style={{ background: "none", border: "none", color: "#8fa8c6", cursor: "pointer" }}>
                 <X size={18} />
               </button>
             </div>
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                Summary
+                Resumen
               </label>
               <div style={{ color: "#ebf3ff", fontSize: "13px" }}>{selectedProposal.summary}</div>
             </div>
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                State
+                Estado
               </label>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#ebf3ff", fontSize: "13px" }}>
                 {getStateIcon(selectedProposal.state)}
@@ -465,7 +465,7 @@ export function VersionsTab() {
             </div>
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                Impact Analysis
+                Análisis de impacto
               </label>
               <pre style={{ background: "rgba(3, 9, 18, 0.8)", padding: "12px", borderRadius: "6px", color: "#ebf3ff", fontSize: "12px", overflow: "auto" }}>
                 {JSON.stringify(selectedProposal.impact_analysis, null, 2)}
@@ -473,7 +473,7 @@ export function VersionsTab() {
             </div>
             <div style={{ marginBottom: "12px" }}>
               <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                SHACL Validation
+                Validación SHACL
               </label>
               <pre style={{ background: "rgba(3, 9, 18, 0.8)", padding: "12px", borderRadius: "6px", color: "#ebf3ff", fontSize: "12px", overflow: "auto" }}>
                 {JSON.stringify(selectedProposal.shacl_validation, null, 2)}
@@ -481,7 +481,7 @@ export function VersionsTab() {
             </div>
             <div>
               <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                Comments ({selectedProposal.comments.length})
+                Comentarios ({selectedProposal.comments.length})
               </label>
               <div style={{ maxHeight: "120px", overflow: "auto" }}>
                 {selectedProposal.comments.map((comment) => (
@@ -500,7 +500,7 @@ export function VersionsTab() {
         <div style={modalOverlayStyle} onClick={() => setShowCompareModal(false)}>
           <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
-              <h3 style={{ margin: 0, color: "#ebf3ff", fontSize: "16px" }}>Compare Versions</h3>
+              <h3 style={{ margin: 0, color: "#ebf3ff", fontSize: "16px" }}>Comparar versiones</h3>
               <button onClick={() => setShowCompareModal(false)} style={{ background: "none", border: "none", color: "#8fa8c6", cursor: "pointer" }}>
                 <X size={18} />
               </button>
@@ -508,7 +508,7 @@ export function VersionsTab() {
             <div style={{ display: "flex", gap: "12px", marginBottom: "16px" }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                  Version 1
+                  Versión 1
                 </label>
                 <input
                   type="text"
@@ -519,7 +519,7 @@ export function VersionsTab() {
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ display: "block", color: "#8fa8c6", fontSize: "12px", marginBottom: "4px" }}>
-                  Version 2
+                  Versión 2
                 </label>
                 <input
                   type="text"
@@ -531,7 +531,7 @@ export function VersionsTab() {
             </div>
             <button style={buttonStyle} onClick={runVersionComparison} disabled={isLoading}>
               <Scale size={12} />
-              {isLoading ? "Comparing..." : "Compare"}
+              {isLoading ? "Comparando..." : "Comparar"}
             </button>
             {compareResult && (
               <pre style={{ marginTop: "16px", background: "rgba(3, 9, 18, 0.8)", padding: "12px", borderRadius: "6px", color: "#ebf3ff", fontSize: "12px", overflow: "auto" }}>

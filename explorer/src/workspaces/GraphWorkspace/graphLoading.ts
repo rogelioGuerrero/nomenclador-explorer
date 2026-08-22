@@ -12,39 +12,39 @@ export const GRAPH_LOAD_STAGE_SEQUENCE: Exclude<GraphLoadPhase, "ready">[] = [
 export function getGraphLoadTitle(phase: GraphLoadPhase): string {
   switch (phase) {
     case "bootstrapping":
-      return "Preparing graph session";
+      return "Preparando sesión de grafo";
     case "fetching_nodes":
-      return "Loading nodes";
+      return "Cargando nodos";
     case "fetching_edges":
-      return "Loading relationships";
+      return "Cargando relaciones";
     case "computing_styling":
-      return "Computing node styling";
+      return "Calculando estilos de nodos";
     case "hydrating_scene":
-      return "Hydrating graph scene";
+      return "Hidratando escena del grafo";
     case "stabilizing_layout":
-      return "Stabilizing layout";
+      return "Estabilizando diseño";
     case "ready":
     default:
-      return "Graph ready";
+      return "Grafo listo";
   }
 }
 
 export function getGraphLoadStageLabel(phase: Exclude<GraphLoadPhase, "ready">): string {
   switch (phase) {
     case "bootstrapping":
-      return "Prepare";
+      return "Preparar";
     case "fetching_nodes":
-      return "Nodes";
+      return "Nodos";
     case "fetching_edges":
-      return "Relations";
+      return "Relaciones";
     case "computing_styling":
-      return "Styling";
+      return "Estilos";
     case "hydrating_scene":
-      return "Scene";
+      return "Escena";
     case "stabilizing_layout":
-      return "Layout";
+      return "Diseño";
     default:
-      return "Stage";
+      return "Etapa";
   }
 }
 

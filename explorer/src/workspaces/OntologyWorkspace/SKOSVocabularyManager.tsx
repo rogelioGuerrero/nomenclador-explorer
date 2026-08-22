@@ -133,7 +133,7 @@ function ConceptDetailPanel({
       <div style={detailHeaderStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <BookOpen size={13} color="#9ee8d7" />
-          <span style={{ color: "#ebf3ff", fontSize: 13, fontWeight: 700 }}>Concept Detail</span>
+          <span style={{ color: "#ebf3ff", fontSize: 13, fontWeight: 700 }}>Detalle del concepto</span>
         </div>
         <button onClick={onClose} style={iconBtnStyle}>
           <X size={14} />
@@ -177,7 +177,7 @@ function ConceptDetailPanel({
           </div>
 
           {detail.definition && (
-            <PropSection label="Definition">
+            <PropSection label="Definición">
               <p style={{ margin: 0, color: "#c6d4e3", fontSize: 13, lineHeight: 1.6 }}>
                 {detail.definition}
               </p>
@@ -185,7 +185,7 @@ function ConceptDetailPanel({
           )}
 
           {detail.scope_note && (
-            <PropSection label="Scope Note">
+            <PropSection label="Nota de alcance">
               <p style={{ margin: 0, color: "#8fa8c6", fontSize: 12, lineHeight: 1.5 }}>
                 {detail.scope_note}
               </p>
@@ -193,23 +193,23 @@ function ConceptDetailPanel({
           )}
 
           {detail.editorial_note && (
-            <PropSection label="Editorial Note">
+            <PropSection label="Nota editorial">
               <p style={{ margin: 0, color: "#8fa8c6", fontSize: 12, lineHeight: 1.5 }}>
                 {detail.editorial_note}
               </p>
             </PropSection>
           )}
 
-          {renderUriList("Broader", detail.broader)}
-          {renderUriList("Narrower", detail.narrower)}
-          {renderUriList("Related", detail.related)}
-          {renderUriList("Exact Match", detail.exact_match)}
-          {renderUriList("Close Match", detail.close_match)}
-          {renderUriList("Broad Match", detail.broad_match)}
-          {renderUriList("Narrow Match", detail.narrow_match)}
+          {renderUriList("Más amplio", detail.broader)}
+          {renderUriList("Más estrecho", detail.narrower)}
+          {renderUriList("Relacionado", detail.related)}
+          {renderUriList("Coincidencia exacta", detail.exact_match)}
+          {renderUriList("Coincidencia cercana", detail.close_match)}
+          {renderUriList("Coincidencia amplia", detail.broad_match)}
+          {renderUriList("Coincidencia estrecha", detail.narrow_match)}
 
           {detail.scheme_uri && (
-            <PropSection label="Concept Scheme">
+            <PropSection label="Esquema de conceptos">
               <span style={{ color: "#c6d4e3", fontSize: 11, fontFamily: "monospace", wordBreak: "break-all" }}>
                 {detail.scheme_uri}
               </span>
@@ -364,7 +364,7 @@ function SchemePanel({
       .then(async (r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
-        if (r.status === 207 && !ignore) setError(data.message || "Warning: Partial success loading hierarchy.");
+        if (r.status === 207 && !ignore) setError(data.message || "Aviso: Carga parcial de la jerarquía.");
         return data;
       })
       .then((data) => {
@@ -373,7 +373,7 @@ function SchemePanel({
       .catch((err) => {
         if (!ignore) {
           setHierarchy([]);
-          setError(err instanceof Error ? err.message : "Failed to load hierarchy.");
+          setError(err instanceof Error ? err.message : "Error al cargar la jerarquía.");
         }
       })
       .finally(() => {
@@ -410,7 +410,7 @@ function SchemePanel({
           <span style={{ color: "#e6edf3", fontSize: 14, fontWeight: 700 }}>{scheme.title}</span>
         </div>
         <span style={{ color: "#6a7f97", fontSize: 11 }}>
-          {loading ? "…" : `${totalConcepts} concept${totalConcepts !== 1 ? "s" : ""}`}
+          {loading ? "…" : `${totalConcepts} concepto${totalConcepts !== 1 ? "s" : ""}`}
         </span>
       </button>
 
@@ -420,11 +420,11 @@ function SchemePanel({
           {loading ? (
             <div style={{ padding: "10px 20px", display: "flex", alignItems: "center", gap: 8 }}>
               <Loader2 size={12} color="#4aa3ff" style={{ animation: "spin 0.8s linear infinite" }} />
-              <span style={{ color: "#6a7f97", fontSize: 12 }}>Loading concepts…</span>
+              <span style={{ color: "#6a7f97", fontSize: 12 }}>Cargando conceptos…</span>
             </div>
           ) : displayedConcepts.length === 0 ? (
             <div style={{ padding: "8px 24px", color: "#6a7f97", fontSize: 12, fontStyle: "italic" }}>
-              {searchQuery ? "No matching concepts" : "No concepts in this scheme"}
+              {searchQuery ? "No hay conceptos coincidentes" : "No hay conceptos en este esquema"}
             </div>
           ) : (
             <div style={{ paddingTop: 2 }}>
@@ -463,9 +463,9 @@ export function SKOSVocabularyManager({ schemeUri }: Props) {
   useEffect(() => {
     fetch("/api/ontology/skos/schemes")
       .then(async (r) => {
-        if (!r.ok) throw new Error(`Failed to load schemes (${r.status})`);
+        if (!r.ok) throw new Error(`Error al cargar esquemas (${r.status})`);
         const data = await r.json();
-        if (r.status === 207) setError(data.message || "Warning: Partial success loading schemes.");
+        if (r.status === 207) setError(data.message || "Aviso: Carga parcial de esquemas.");
         return data;
       })
       .then(setSchemes)
@@ -487,7 +487,7 @@ export function SKOSVocabularyManager({ schemeUri }: Props) {
           <input
             value={searchQ}
             onChange={(e) => setSearchQ(e.target.value)}
-            placeholder="Search labels and definitions…"
+            placeholder="Buscar etiquetas y definiciones…"
             style={skosSearchInputStyle}
           />
           {searchQ && (
@@ -518,10 +518,10 @@ export function SKOSVocabularyManager({ schemeUri }: Props) {
             <div style={{ ...centerStyle, textAlign: "center", padding: 28 }}>
               <BookOpen size={28} color="rgba(158,232,215,0.15)" />
               <span style={{ color: "#8fa8c6", fontSize: 12, marginTop: 10 }}>
-                No SKOS concept schemes found
+                No se encontraron esquemas de conceptos SKOS
               </span>
               <span style={{ color: "#6a7f97", fontSize: 11, marginTop: 4, maxWidth: 220 }}>
-                Import a SKOS vocabulary to browse concepts here
+                Importa un vocabulario SKOS para explorar conceptos aquí
               </span>
             </div>
           )}

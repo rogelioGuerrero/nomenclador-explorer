@@ -45,12 +45,12 @@ const ENTITY_TYPE_COLORS: Record<string, string> = {
 };
 
 const ENTITY_TYPE_LABELS: Record<string, string> = {
-  class: "Class",
-  property: "Property",
-  individual: "Individual",
-  concept: "Concept",
-  scheme: "Scheme",
-  unknown: "Entity",
+  class: "Clase",
+  property: "Propiedad",
+  individual: "Individuo",
+  concept: "Concepto",
+  scheme: "Esquema",
+  unknown: "Entidad",
 };
 
 function TypeBadge({ entityType }: { entityType: string }) {
@@ -130,7 +130,7 @@ function ResultRow({
       )}
       {result.source_ontology && (
         <div style={{ color: "var(--ws-text-muted)", fontSize: 10 }}>
-          From: {result.source_ontology}
+          De: {result.source_ontology}
         </div>
       )}
     </div>
@@ -159,7 +159,7 @@ function CollapsibleList({ label, items }: { label: string; items: string[] }) {
             </div>
           ))}
           {items.length > 12 && (
-            <span style={{ color: "var(--ws-text-muted)", fontSize: 10 }}>+{items.length - 12} more</span>
+            <span style={{ color: "var(--ws-text-muted)", fontSize: 10 }}>+{items.length - 12} más</span>
           )}
         </div>
       )}
@@ -192,7 +192,7 @@ function DetailPanel({
       .then(async (r) => {
         if (!r.ok) throw new Error("Not found");
         const data = await r.json();
-        if (r.status === 207) setError(data.message || "Warning: Partial success loading entity.");
+        if (r.status === 207) setError(data.message || "Aviso: Carga parcial de la entidad.");
         return data;
       })
       .then((data) => {
@@ -213,7 +213,7 @@ function DetailPanel({
         <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
           <BookOpen size={14} color="#d2a8ff" />
           <span style={{ color: "#ebf3ff", fontSize: 13, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            Entity Detail
+            Detalle de la entidad
           </span>
         </div>
         <button onClick={onClose} style={closeDetailBtnStyle}>
@@ -249,7 +249,7 @@ function DetailPanel({
           </div>
 
           {detail.definition && (
-            <DetailSection label="Definition">
+            <DetailSection label="Definición">
               <p style={{ margin: 0, color: "#c6d4e3", fontSize: 13, lineHeight: 1.6 }}>
                 {detail.definition}
               </p>
@@ -257,20 +257,20 @@ function DetailPanel({
           )}
 
           {detail.instance_count > 0 && (
-            <DetailSection label="Instances">
+            <DetailSection label="Instancias">
               <span style={{ color: "#9ee8d7", fontSize: 14, fontWeight: 800 }}>
                 {detail.instance_count.toLocaleString()}
               </span>
             </DetailSection>
           )}
 
-          <CollapsibleList label="Superclasses / Broader" items={detail.superclasses} />
-          <CollapsibleList label="Subclasses / Narrower" items={detail.subclasses} />
-          <CollapsibleList label="Domain" items={detail.domain} />
-          <CollapsibleList label="Range" items={detail.range} />
+          <CollapsibleList label="Superclases / Más amplias" items={detail.superclasses} />
+          <CollapsibleList label="Subclases / Más estrechas" items={detail.subclasses} />
+          <CollapsibleList label="Dominio" items={detail.domain} />
+          <CollapsibleList label="Rango" items={detail.range} />
 
           {detail.source_ontology && (
-            <DetailSection label="Source Ontology">
+            <DetailSection label="Ontología origen">
               <span style={{ color: "#c6d4e3", fontSize: 12, fontFamily: "monospace" }}>
                 {detail.source_ontology}
               </span>
@@ -284,7 +284,7 @@ function DetailPanel({
             style={openUriStyle}
           >
             <ExternalLink size={11} />
-            Open URI
+            Abrir URI
           </a>
         </div>
       )}
@@ -350,7 +350,7 @@ export function OntologySearch() {
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search classes, properties, concepts…"
+            placeholder="Buscar clases, propiedades, conceptos..."
             style={searchInputStyle}
           />
           {searching && <Loader2 size={13} color="#4aa3ff" style={{ animation: "spin 0.8s linear infinite", flexShrink: 0 }} />}
@@ -371,7 +371,7 @@ export function OntologySearch() {
                 ...(entityType === t ? typeFilterBtnActive : typeFilterBtnIdle),
               }}
             >
-              {t === "all" ? "All" : ENTITY_TYPE_LABELS[t] || t}
+              {t === "all" ? "Todas" : ENTITY_TYPE_LABELS[t] || t}
             </button>
           ))}
         </div>
@@ -384,21 +384,21 @@ export function OntologySearch() {
             <div style={hintStyle}>
               <Search size={20} color="rgba(74,163,255,0.2)" />
               <span style={{ color: "#6a7f97", fontSize: 12, marginTop: 8 }}>
-                Type to search across all loaded ontologies
+                Escribe para buscar en todas las ontologías cargadas
               </span>
             </div>
           )}
 
           {query && results.length === 0 && !searching && (
             <div style={hintStyle}>
-              <span style={{ color: "#6a7f97", fontSize: 12 }}>No results for "{query}"</span>
+              <span style={{ color: "#6a7f97", fontSize: 12 }}>Sin resultados para "{query}"</span>
             </div>
           )}
 
           {results.length > 0 && (
             <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{ color: "#6a7f97", fontSize: 11, fontWeight: 700, marginBottom: 2 }}>
-                {results.length} result{results.length !== 1 ? "s" : ""}
+                {results.length} resultado{results.length !== 1 ? "s" : ""}
               </div>
               {results.map((r) => (
                 <ResultRow

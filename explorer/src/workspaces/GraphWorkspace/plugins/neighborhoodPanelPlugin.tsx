@@ -14,9 +14,9 @@ function maxWeightBetween(graphRef: any, sourceId: string, targetId: string): nu
 }
 
 function formatNeighborMeta(neighbor: { nodeType: string; degree: number; weight: number }) {
-  const parts = [neighbor.nodeType, `degree ${neighbor.degree}`];
+  const parts = [neighbor.nodeType, `grado ${neighbor.degree}`];
   if (neighbor.weight > 0) {
-    parts.push(`weight ${neighbor.weight.toFixed(2)}`);
+    parts.push(`peso ${neighbor.weight.toFixed(2)}`);
   }
   return parts.join(" · ");
 }
@@ -29,8 +29,8 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
   toolbarItems: (context) => [
     {
       id: "neighborhood-toggle",
-      label: "Neighbors",
-      title: "Toggle neighborhood panel",
+      label: "Vecinos",
+      title: "Alternar panel de vecindario",
       active: context.isPanelOpen(NEIGHBORHOOD_PANEL_ID),
       order: 30,
       onClick: () => context.dispatchAction({ type: "togglePanel", panelId: NEIGHBORHOOD_PANEL_ID }),
@@ -46,13 +46,13 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
     if (!selected) {
       return {
         id: NEIGHBORHOOD_PANEL_ID,
-        title: "Neighborhood",
+        title: "Vecindario",
         placement: "bottom",
         order: 20,
         defaultOpen: false,
         preferredWidth: 360,
         preferredHeight: 260,
-        content: <div style={emptyTextStyle}>Select a node to inspect its local neighborhood.</div>,
+        content: <div style={emptyTextStyle}>Selecciona un nodo para inspeccionar su vecindario local.</div>,
       };
     }
 
@@ -91,7 +91,7 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
 
     return {
       id: NEIGHBORHOOD_PANEL_ID,
-      title: "Neighborhood",
+      title: "Vecindario",
       placement: "bottom",
       order: 20,
       defaultOpen: false,
@@ -101,7 +101,7 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
         <div style={panelBodyStyle}>
           <div style={panelEyebrowStyle}>{selected.label}</div>
           <div style={summaryStyle}>
-            {selected.neighborCount.toLocaleString()} direct neighbors in the full graph
+            {selected.neighborCount.toLocaleString()} vecinos directos en el grafo completo
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
@@ -110,7 +110,7 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
               disabled={!selected.canCollapseNeighborhood || selected.isNeighborhoodCollapsed}
               style={controlButtonStyle}
             >
-              Collapse Neighborhood
+              Colapsar vecindario
             </button>
             <button
               type="button"
@@ -118,17 +118,17 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
               disabled={!selected.isNeighborhoodCollapsed}
               style={controlButtonStyle}
             >
-              Expand Neighborhood
+              Expandir vecindario
             </button>
           </div>
           {hiddenNeighborCount > 0 ? (
             <div style={summaryStyle}>
-              {hiddenNeighborCount.toLocaleString()} lower-priority neighbors are collapsed in the current view.
+              {hiddenNeighborCount.toLocaleString()} vecinos de menor prioridad están colapsados en la vista actual.
             </div>
           ) : null}
           {aggregatedEdgeCount > 0 ? (
             <div style={summaryStyle}>
-              {aggregatedEdgeCount.toLocaleString()} aggregated structural bundle{aggregatedEdgeCount === 1 ? "" : "s"} visible.
+              {aggregatedEdgeCount.toLocaleString()} paquete{aggregatedEdgeCount === 1 ? "" : "s"} estructural(es) agregado(s) visible(s).
             </div>
           ) : null}
           {neighbors.length ? (
@@ -155,7 +155,7 @@ export const neighborhoodPanelPlugin: GraphPlugin = {
               ))}
             </div>
           ) : (
-            <div style={emptyTextStyle}>No direct neighbors are available for this node.</div>
+            <div style={emptyTextStyle}>No hay vecinos directos disponibles para este nodo.</div>
           )}
         </div>
       ),

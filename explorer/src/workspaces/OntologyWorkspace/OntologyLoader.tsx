@@ -223,8 +223,8 @@ function URLImportPanel({ onLoaded }: { onLoaded: () => void }) {
         }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Load failed" }));
-        throw new Error(err.detail || "Load failed");
+        const err = await res.json().catch(() => ({ detail: "Error al cargar" }));
+        throw new Error(err.detail || "Error al cargar");
       }
       setLoadState("success");
       setTimeout(() => {
@@ -233,13 +233,13 @@ function URLImportPanel({ onLoaded }: { onLoaded: () => void }) {
       }, 1200);
     } catch (e) {
       setLoadState("error");
-      setErrorMsg(e instanceof Error ? e.message : "Load failed");
+      setErrorMsg(e instanceof Error ? e.message : "Error al cargar");
     }
   };
 
   return (
     <div style={panelBodyStyle}>
-      <FieldGroup label="Ontology URL">
+      <FieldGroup label="URL de la ontología">
         <div style={{ display: "flex", gap: 8 }}>
           <input
             type="url"
@@ -260,7 +260,7 @@ function URLImportPanel({ onLoaded }: { onLoaded: () => void }) {
             {previewState === "loading" ? (
               <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
             ) : (
-              "Fetch Preview"
+              "Vista previa"
             )}
           </button>
         </div>
@@ -283,32 +283,32 @@ function URLImportPanel({ onLoaded }: { onLoaded: () => void }) {
           size={13}
           style={{ transform: showAdvanced ? "rotate(180deg)" : undefined, transition: "200ms" }}
         />
-        Advanced options
+        Opciones avanzadas
       </button>
 
       {showAdvanced && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <FieldGroup label="Format override">
+          <FieldGroup label="Sobreescribir formato">
             <select
               value={format}
               onChange={(e) => setFormat(e.target.value)}
               style={selectStyle}
             >
-              <option value="">Auto-detect</option>
+              <option value="">Auto-detectar</option>
               <option value="turtle">Turtle (.ttl)</option>
               <option value="xml">RDF/XML (.rdf, .owl)</option>
               <option value="nt">N-Triples (.nt)</option>
               <option value="json-ld">JSON-LD (.jsonld)</option>
             </select>
           </FieldGroup>
-          <FieldGroup label="Custom display name">
-            <Input value={customName} onChange={setCustomName} placeholder="Leave blank to use ontology title" />
+          <FieldGroup label="Nombre personalizado">
+            <Input value={customName} onChange={setCustomName} placeholder="Dejar vacío para usar el título de la ontología" />
           </FieldGroup>
-          <FieldGroup label="Description">
-            <Input value={description} onChange={setDescription} placeholder="Optional description" />
+          <FieldGroup label="Descripción">
+            <Input value={description} onChange={setDescription} placeholder="Descripción opcional" />
           </FieldGroup>
-          <FieldGroup label="Tags (comma-separated)">
-            <Input value={tags} onChange={setTags} placeholder="e.g. biology, upper-ontology" />
+          <FieldGroup label="Etiquetas (separadas por comas)">
+            <Input value={tags} onChange={setTags} placeholder="ej. biología, ontología-superior" />
           </FieldGroup>
         </div>
       )}
@@ -316,7 +316,7 @@ function URLImportPanel({ onLoaded }: { onLoaded: () => void }) {
       {loadState === "success" && (
         <div style={successBoxStyle}>
           <CheckCircle2 size={13} />
-          <span>Ontology loaded successfully</span>
+          <span>Ontología cargada con éxito</span>
         </div>
       )}
 
@@ -336,12 +336,12 @@ function URLImportPanel({ onLoaded }: { onLoaded: () => void }) {
           {loadState === "loading" ? (
             <>
               <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
-              Loading…
+              Cargando…
             </>
           ) : (
             <>
               <Globe size={13} />
-              Load Ontology
+              Cargar ontología
             </>
           )}
         </button>
@@ -395,8 +395,8 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
         body: JSON.stringify({ content, ...(format ? { format } : {}) }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Load failed" }));
-        throw new Error(err.detail || "Load failed");
+        const err = await res.json().catch(() => ({ detail: "Error al cargar" }));
+        throw new Error(err.detail || "Error al cargar");
       }
       setLoadState("success");
       setTimeout(() => {
@@ -405,7 +405,7 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
       }, 1200);
     } catch (e) {
       setLoadState("error");
-      setErrorMsg(e instanceof Error ? e.message : "Load failed");
+      setErrorMsg(e instanceof Error ? e.message : "Error al cargar");
     }
   };
 
@@ -430,7 +430,7 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
         ) : (
           <>
             <div style={{ color: "#8fa8c6", fontSize: 13 }}>
-              Drop a file here or <span style={{ color: "#4aa3ff" }}>browse</span>
+              Suelta un archivo aquí o <span style={{ color: "#4aa3ff" }}>explora</span>
             </div>
             <div style={{ color: "var(--ws-text-muted)", fontSize: 11 }}>
               .ttl · .rdf · .owl · .xml · .nt · .jsonld · .json · .n3
@@ -447,7 +447,7 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
       </div>
 
       {content && (
-        <FieldGroup label="Format">
+        <FieldGroup label="Formato">
           <select
             value={format}
             onChange={(e) => setFormat(e.target.value)}
@@ -464,7 +464,7 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
       {loadState === "success" && (
         <div style={successBoxStyle}>
           <CheckCircle2 size={13} />
-          <span>Ontology loaded successfully — {fileName}</span>
+          <span>Ontología cargada con éxito — {fileName}</span>
         </div>
       )}
 
@@ -484,12 +484,12 @@ function FileUploadPanel({ onLoaded }: { onLoaded: () => void }) {
           {loadState === "loading" ? (
             <>
               <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
-              Loading…
+              Cargando…
             </>
           ) : (
             <>
               <FileUp size={13} />
-              Load File
+              Cargar archivo
             </>
           )}
         </button>
@@ -531,8 +531,8 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
         }),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Create failed" }));
-        throw new Error(err.detail || "Create failed");
+        const err = await res.json().catch(() => ({ detail: "Error al crear" }));
+        throw new Error(err.detail || "Error al crear");
       }
       setCreateState("success");
       setTimeout(() => {
@@ -541,7 +541,7 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
       }, 1200);
     } catch (e) {
       setCreateState("error");
-      setErrorMsg(e instanceof Error ? e.message : "Create failed");
+      setErrorMsg(e instanceof Error ? e.message : "Error al crear");
     }
   };
 
@@ -557,29 +557,29 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
               ...(createMode === m ? modeTabActive : modeTabIdle),
             }}
           >
-            {m === "scratch" ? "From Scratch" : m === "data" ? "From Data" : "From Text"}
+            {m === "scratch" ? "Desde cero" : m === "data" ? "Desde datos" : "Desde texto"}
           </button>
         ))}
       </div>
 
-      <FieldGroup label="Display Name *">
-        <Input value={name} onChange={setName} placeholder="My Ontology" />
+      <FieldGroup label="Nombre para mostrar *">
+        <Input value={name} onChange={setName} placeholder="Mi ontología" />
       </FieldGroup>
 
-      <FieldGroup label="Namespace URI *">
+      <FieldGroup label="URI de espacio de nombres *">
         <Input value={namespace} onChange={setNamespace} placeholder="https://example.org/onto/" />
       </FieldGroup>
 
-      <FieldGroup label="Description">
-        <Input value={description} onChange={setDescription} placeholder="Optional description" />
+      <FieldGroup label="Descripción">
+        <Input value={description} onChange={setDescription} placeholder="Descripción opcional" />
       </FieldGroup>
 
-      <FieldGroup label="Tags (comma-separated)">
-        <Input value={tags} onChange={setTags} placeholder="e.g. internal, draft" />
+      <FieldGroup label="Etiquetas (separadas por comas)">
+        <Input value={tags} onChange={setTags} placeholder="ej. interno, borrador" />
       </FieldGroup>
 
       {createMode === "data" && (
-        <FieldGroup label="Sample Data (JSON or CSV)">
+        <FieldGroup label="Datos de muestra (JSON o CSV)">
           <Textarea
             value={sampleData}
             onChange={setSampleData}
@@ -590,7 +590,7 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
       )}
 
       {createMode === "text" && (
-        <FieldGroup label="Schema Requirements (natural language)">
+        <FieldGroup label="Requisitos del esquema (lenguaje natural)">
           <Textarea
             value={schemaText}
             onChange={setSchemaText}
@@ -603,7 +603,7 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
       {createState === "success" && (
         <div style={successBoxStyle}>
           <CheckCircle2 size={13} />
-          <span>Ontology created and opened in the Registry</span>
+          <span>Ontología creada y abierta en el Registro</span>
         </div>
       )}
 
@@ -623,12 +623,12 @@ function CreateNewPanel({ onLoaded }: { onLoaded: () => void }) {
           {createState === "loading" ? (
             <>
               <Loader2 size={13} style={{ animation: "spin 1s linear infinite" }} />
-              Creating…
+              Creando…
             </>
           ) : (
             <>
               <Plus size={13} />
-              Create Ontology
+              Crear ontología
             </>
           )}
         </button>
@@ -649,9 +649,9 @@ export function OntologyLoader({ onLoaded, onClose }: LoaderProps) {
       <div style={modalStyle}>
         <div style={modalHeaderStyle}>
           <div>
-            <div style={{ color: "#ebf3ff", fontSize: 16, fontWeight: 800 }}>Load Ontology</div>
+            <div style={{ color: "#ebf3ff", fontSize: 16, fontWeight: 800 }}>Cargar ontología</div>
             <div style={{ color: "#8fa8c6", fontSize: 12, marginTop: 2 }}>
-              Import from URL, upload a file, or create a new ontology
+              Importar desde URL, subir un archivo o crear una ontología nueva
             </div>
           </div>
           <button onClick={onClose} style={closeIconBtnStyle}>
@@ -670,11 +670,11 @@ export function OntologyLoader({ onLoaded, onClose }: LoaderProps) {
               }}
             >
               {m === "url" ? (
-                <><Globe size={12} /> URL Import</>
+                <><Globe size={12} /> Importar URL</>
               ) : m === "file" ? (
-                <><FileUp size={12} /> File Upload</>
+                <><FileUp size={12} /> Subir archivo</>
               ) : (
-                <><Plus size={12} /> Create New</>
+                <><Plus size={12} /> Crear nueva</>
               )}
             </button>
           ))}

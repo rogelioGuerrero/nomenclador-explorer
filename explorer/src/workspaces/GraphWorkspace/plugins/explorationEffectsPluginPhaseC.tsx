@@ -19,56 +19,56 @@ type EffectRowConfig = {
 const SCENE_EFFECT_ROWS: EffectRowConfig[] = [
   {
     key: "pathPulseEnabled",
-    label: "Path Pulse",
-    description: "Animated pulse on the active selected path.",
+    label: "Pulso de camino",
+    description: "Pulso animado en el camino seleccionado activo.",
   },
   {
     key: "pathFlowEnabled",
-    label: "Path Flow",
-    description: "Directional flow accents along the active selected path.",
+    label: "Flujo de camino",
+    description: "Acentos direccionales de flujo a lo largo del camino seleccionado activo.",
   },
   {
     key: "lensEnabled",
-    label: "Neighborhood Lens",
-    description: "Local emphasis around the hovered or selected node.",
+    label: "Lente de vecindario",
+    description: "Énfasis local alrededor del nodo seleccionado o bajo cursor.",
   },
   {
     key: "temporalEmphasisEnabled",
-    label: "Temporal Emphasis",
-    description: "Subtle glow around temporally relevant nodes in the active time window.",
+    label: "Énfasis temporal",
+    description: "Brillo sutil alrededor de nodos temporalmente relevantes en la ventana de tiempo activa.",
   },
   {
     key: "semanticRegionsEnabled",
-    label: "Semantic Regions",
-    description: "Quiet semantic hulls around the strongest visible topic clusters.",
+    label: "Regiones semánticas",
+    description: "Envolturas semánticas discretas alrededor de los clusters de temas más fuertes visibles.",
   },
   {
     key: "contoursEnabled",
-    label: "Contours",
-    description: "Low-contrast density halos around the strongest visible anchors.",
+    label: "Contornos",
+    description: "Halo de densidad de bajo contraste alrededor de los anclas más fuertes visibles.",
   },
   {
     key: "legendEnabled",
-    label: "Regions Summary",
-    description: "Keep the regions and signals summary visible in the Effects panel.",
+    label: "Resumen de regiones",
+    description: "Mantener visible el resumen de regiones y señales en el panel de Efectos.",
   },
 ];
 
 const INTELLIGENCE_EFFECT_ROWS: EffectRowConfig[] = [
   {
     key: "pathfindingEnabled",
-    label: "Directed Pathfinding",
-    description: "Compare the traced path against a strict local directed shortest path.",
+    label: "Búsqueda de camino dirigida",
+    description: "Comparar el camino trazado contra un camino más corto dirigido local estricto.",
   },
   {
     key: "communitiesEnabled",
-    label: "Community Regions",
-    description: "Detect stable Louvain communities for orientation and scene grouping.",
+    label: "Regiones de comunidad",
+    description: "Detectar comunidades estables de Louvain para orientación y agrupación de escena.",
   },
   {
     key: "centralityEnabled",
-    label: "Centrality Ranking",
-    description: "Rank the strongest graph anchors for labels, regions, and navigation.",
+    label: "Ranking de centralidad",
+    description: "Clasificar las anclas más fuertes del grafo para etiquetas, regiones y navegación.",
   },
 ];
 
@@ -123,7 +123,7 @@ function resolveAvailability(
   return availabilityMap?.[AVAILABILITY_KEYS[key]] ?? {
     enabled,
     available: false,
-    reason: "Waiting for graph runtime",
+    reason: "Esperando runtime del grafo",
   };
 }
 
@@ -148,7 +148,7 @@ function EffectToggleRow({
         <div style={rowMetaStyle}>{renderAvailabilityText(availability)}</div>
       </div>
       <button type="button" onClick={onToggle} style={checked ? toggleButtonActiveStyle : toggleButtonStyle}>
-        {checked ? "On" : "Off"}
+        {checked ? "Activo" : "Inactivo"}
       </button>
     </div>
   );
@@ -165,14 +165,14 @@ function renderRegionsAndSignals(
   const directedPath = analytics?.directedPath ?? null;
 
   if (!semanticRegions.length && !communities.length && !centrality.length && !fallbackLegendItems.length && !directedPath) {
-    return <div style={emptyTextStyle}>Regions and intelligence summaries will populate when graph analytics are ready.</div>;
+    return <div style={emptyTextStyle}>Las regiones y resúmenes de inteligencia aparecerán cuando el análisis del grafo esté listo.</div>;
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {semanticRegions.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={subsectionTitleStyle}>Semantic regions</div>
+          <div style={subsectionTitleStyle}>Regiones semánticas</div>
           {semanticRegions.map((region) => (
             <div key={region.semanticGroup} style={legendRowStyle}>
               <span
@@ -185,7 +185,7 @@ function renderRegionsAndSignals(
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={rowTitleStyle}>{region.semanticGroup}</div>
                 <div style={rowMetaStyle}>
-                  {region.visibleNodeCount.toLocaleString()} visible / {region.nodeCount.toLocaleString()} total
+                  {region.visibleNodeCount.toLocaleString()} visibles / {region.nodeCount.toLocaleString()} total
                 </div>
               </div>
               <div style={signalBadgeStyle}>{region.anchorLabel}</div>
@@ -196,13 +196,13 @@ function renderRegionsAndSignals(
 
       {communities.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={subsectionTitleStyle}>Community anchors</div>
+          <div style={subsectionTitleStyle}>Anclas de comunidad</div>
           {communities.slice(0, 3).map((community) => (
             <div key={community.communityId} style={signalRowStyle}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={rowTitleStyle}>{community.anchorLabel}</div>
                 <div style={rowMetaStyle}>
-                  Community {community.communityId} - {community.visibleNodeCount} visible / {community.nodeCount} total
+                  Comunidad {community.communityId} - {community.visibleNodeCount} visibles / {community.nodeCount} total
                 </div>
               </div>
               <div style={signalBadgeStyle}>{community.dominantSemanticGroup}</div>
@@ -213,13 +213,13 @@ function renderRegionsAndSignals(
 
       {centrality.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={subsectionTitleStyle}>Centrality leaders</div>
+          <div style={subsectionTitleStyle}>Líderes de centralidad</div>
           {centrality.slice(0, 3).map((node) => (
             <div key={node.id} style={signalRowStyle}>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={rowTitleStyle}>{node.label}</div>
                 <div style={rowMetaStyle}>
-                  {node.semanticGroup} - score {node.score.toFixed(3)}
+                  {node.semanticGroup} - puntaje {node.score.toFixed(3)}
                 </div>
               </div>
               <div style={signalBadgeStyle}>deg {node.degree.toFixed(3)}</div>
@@ -233,12 +233,12 @@ function renderRegionsAndSignals(
           <div style={subsectionTitleStyle}>Directed pathfinding</div>
           <div style={signalRowStyle}>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={rowTitleStyle}>{directedPath.ready ? "Local directed path ready" : "Waiting for path context"}</div>
+              <div style={rowTitleStyle}>{directedPath.ready ? "Camino dirigido local listo" : "Esperando contexto de camino"}</div>
               <div style={rowMetaStyle}>{directedPath.reason}</div>
             </div>
             {directedPath.ready ? (
               <div style={signalBadgeStyle}>
-                {directedPath.length} hops{directedPath.verifiedAgainstActivePath ? " - match" : ""}
+                {directedPath.length} saltos{directedPath.verifiedAgainstActivePath ? " - coincide" : ""}
               </div>
             ) : null}
           </div>
@@ -247,7 +247,7 @@ function renderRegionsAndSignals(
 
       {!semanticRegions.length && !communities.length && !centrality.length && fallbackLegendItems.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <div style={subsectionTitleStyle}>Fallback semantic legend</div>
+          <div style={subsectionTitleStyle}>Leyenda semántica de respaldo</div>
           {fallbackLegendItems.map((item) => (
             <div key={item.group} style={legendRowStyle}>
               <span
@@ -259,7 +259,7 @@ function renderRegionsAndSignals(
               />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={rowTitleStyle}>{item.group}</div>
-                <div style={rowMetaStyle}>{item.count.toLocaleString()} nodes</div>
+                <div style={rowMetaStyle}>{item.count.toLocaleString()} nodos</div>
               </div>
             </div>
           ))}
@@ -277,8 +277,8 @@ export const explorationEffectsPluginPhaseC: GraphPlugin = {
   toolbarItems: (context) => [
     {
       id: "effects-toggle",
-      label: "Effects",
-      title: "Open exploration effects controls",
+      label: "Efectos",
+      title: "Abrir controles de efectos de exploración",
       active: context.isPanelOpen(EFFECTS_PANEL_ID),
       order: 18,
       onClick: () => context.dispatchAction({ type: "togglePanel", panelId: EFFECTS_PANEL_ID }),
@@ -302,7 +302,7 @@ export const explorationEffectsPluginPhaseC: GraphPlugin = {
 
     return {
       id: EFFECTS_PANEL_ID,
-      title: "Effects",
+      title: "Efectos",
       placement: "bottom",
       order: 8,
       defaultOpen: false,
@@ -310,10 +310,10 @@ export const explorationEffectsPluginPhaseC: GraphPlugin = {
       preferredHeight: 360,
       content: (
         <div style={panelBodyStyle}>
-          <div style={panelEyebrowStyle}>Exploration effects</div>
+          <div style={panelEyebrowStyle}>Efectos de exploración</div>
 
           <div style={sectionStyle}>
-            <div style={sectionTitleStyle}>Scene effects</div>
+            <div style={sectionTitleStyle}>Efectos de escena</div>
             {SCENE_EFFECT_ROWS.map((row) => (
               <EffectToggleRow
                 key={row.key}
@@ -327,7 +327,7 @@ export const explorationEffectsPluginPhaseC: GraphPlugin = {
           </div>
 
           <div style={sectionStyle}>
-            <div style={sectionTitleStyle}>Graph intelligence</div>
+            <div style={sectionTitleStyle}>Inteligencia del grafo</div>
             {INTELLIGENCE_EFFECT_ROWS.map((row) => (
               <EffectToggleRow
                 key={row.key}
@@ -342,14 +342,14 @@ export const explorationEffectsPluginPhaseC: GraphPlugin = {
 
           {showSignalsSection ? (
             <div style={sectionStyle}>
-              <div style={sectionTitleStyle}>Regions and signals</div>
+              <div style={sectionTitleStyle}>Regiones y señales</div>
               {renderRegionsAndSignals(context, analyticsSnapshot)}
             </div>
           ) : null}
 
           {import.meta.env.DEV ? (
             <div style={sectionStyle}>
-              <div style={sectionTitleStyle}>Diagnostics</div>
+              <div style={sectionTitleStyle}>Diagnóstico</div>
               <EffectToggleRow
                 label="Dev Diagnostics"
                 description="Inspect plugin, interaction, and effect gating state."
