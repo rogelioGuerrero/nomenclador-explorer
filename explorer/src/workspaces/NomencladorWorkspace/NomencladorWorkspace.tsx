@@ -199,7 +199,7 @@ export function NomencladorWorkspace() {
         <LineageTab />
       ) : (
         <div className="ws-scroll ws-padded">
-          {activeTab === "conceptos" && <ConceptBrowserWrapper />}
+          {activeTab === "conceptos" && <ConceptBrowser />}
           {activeTab === "auditoria" && <AuditoriaTab />}
           {activeTab === "calidad" && <QualityDashboard />}
           {activeTab === "clasificadores" && <ClassifiersTab />}
@@ -213,8 +213,4 @@ export function NomencladorWorkspace() {
       )}
     </div>
   );
-}
-
-function ConceptBrowserWrapper() {
-  return <ConceptBrowser />;
 }

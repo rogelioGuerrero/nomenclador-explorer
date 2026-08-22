@@ -1,20 +1,27 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   ArrowRight,
+  BookMarked,
+  BookOpen,
   BrainCircuit,
+  CheckCircle2,
+  Circle,
   Database,
   FileSearch,
   GitBranch,
   Network,
   Radar,
+  ScanSearch,
   Search,
+  Server,
   Sparkles,
   Workflow,
   type LucideIcon,
 } from 'lucide-react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { GlobalSearch } from './GlobalSearch';
+import { ToastProvider } from './ui/toast';
 
 const GraphWorkspace = lazy(() => import('./workspaces/GraphWorkspace/GraphWorkspace').then((module) => ({ default: module.GraphWorkspace })));
 const ReasoningWorkspace = lazy(() => import('./workspaces/ReasoningWorkspace').then((module) => ({ default: module.ReasoningWorkspace })));
@@ -22,10 +29,21 @@ const SparqlWorkspace = lazy(() => import('./workspaces/SparqlWorkspace/SparqlWo
 const LineageDiagram = lazy(() => import('./workspaces/LineageWorkspace/LineageDiagram').then((module) => ({ default: module.LineageDiagram })));
 const ConceptBrowser = lazy(() => import('./workspaces/NomencladorWorkspace/ConceptBrowser').then((module) => ({ default: module.ConceptBrowser })));
 const NomencladorWorkspace = lazy(() => import('./workspaces/NomencladorWorkspace/NomencladorWorkspace').then((module) => ({ default: module.NomencladorWorkspace })));
+const OntologyWorkspace = lazy(() => import('./workspaces/OntologyWorkspace').then((module) => ({ default: module.OntologyWorkspace })));
+const VocabularyWorkspace = lazy(() => import('./workspaces/VocabularyWorkspace/VocabularyWorkspace').then((module) => ({ default: module.VocabularyWorkspace })));
+const DecisionWorkspace = lazy(() => import('./workspaces/DecisionWorkspace/DecisionWorkspace').then((module) => ({ default: module.DecisionWorkspace })));
+const EntityResolutionTab = lazy(() => import('./workspaces/EnrichWorkspace/EntityResolutionTab').then((module) => ({ default: module.EntityResolutionTab })));
+const RegistryTab = lazy(() => import('./workspaces/EnrichWorkspace/RegistryTab').then((module) => ({ default: module.RegistryTab })));
+const DiffMergeWorkspace = lazy(() => import('./workspaces/DiffMergeWorkspace/DiffMergeWorkspace').then((module) => ({ default: module.DiffMergeWorkspace })));
+const ImportExportWorkspace = lazy(() => import('./workspaces/ImportExportWorkspace/ImportExportWorkspace').then((module) => ({ default: module.ImportExportWorkspace })));
+const KGOverviewTab = lazy(() => import('./workspaces/ManageWorkspace/KGOverviewTab').then((module) => ({ default: module.KGOverviewTab })));
+const OntologySummaryTab = lazy(() => import('./workspaces/ManageWorkspace/OntologySummaryTab').then((module) => ({ default: module.OntologySummaryTab })));
 
-type WorkspaceId = 'welcome' | 'explore' | 'analyze' | 'nomenclador';
+type WorkspaceId = 'welcome' | 'explore' | 'analyze' | 'nomenclador' | 'ontology' | 'vocabulary' | 'enrich' | 'manage';
 type ExploreView = 'graph' | 'concepts';
-type AnalyzeView = 'sparql' | 'reasoning' | 'lineage';
+type AnalyzeView = 'sparql' | 'reasoning' | 'lineage' | 'decisions';
+type EnrichView = 'entity' | 'diffmerge' | 'registry';
+type ManageView = 'overview' | 'ontology-summary' | 'import-export';
 
 type NavItem = {
   id: WorkspaceId;
@@ -58,7 +76,6 @@ type GraphStatsPayload = {
   classifier_count?: number;
 };
 
-const queryClient = new QueryClient();
 
 const PREVIEW_DOTS = Array.from({ length: 42 }, (_, i) => ({
   cx: 170 + ((i * 73) % 330),
@@ -69,8 +86,12 @@ const PREVIEW_DOTS = Array.from({ length: 42 }, (_, i) => ({
 
 const navItems: NavItem[] = [
   { id: 'explore', label: 'Explorar', hint: 'Grafo y conceptos del nomenclador', icon: Database },
-  { id: 'analyze', label: 'Analizar', hint: 'Consultas e inferencia', icon: FileSearch },
+  { id: 'analyze', label: 'Analizar', hint: 'Consultas, inferencia y decisiones', icon: FileSearch },
   { id: 'nomenclador', label: 'Gobernanza', hint: 'Interoperabilidad, calidad y validación', icon: Radar },
+  { id: 'ontology', label: 'Ontología', hint: 'Editor, versiones, alineamientos y SHACL', icon: BookMarked },
+  { id: 'vocabulary', label: 'Vocabulario', hint: 'Esquemas SKOS y conceptos', icon: BookOpen },
+  { id: 'enrich', label: 'Enriquecer', hint: 'Resolución de entidades, merge y registro', icon: ScanSearch },
+  { id: 'manage', label: 'Gestión', hint: 'Resumen del KG, ontología e import/export', icon: Server },
 ];
 
 function WorkspaceShell({
@@ -144,6 +165,7 @@ function WelcomeScreen({
     classifiers: null,
     ready: false,
   });
+  const [temporalBounds, setTemporalBounds] = useState<{ min: string | null; max: string | null } | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -168,6 +190,17 @@ function WelcomeScreen({
           return;
         }
         setStats((current) => ({ ...current, ready: false }));
+      });
+
+    fetch('/api/temporal/bounds', { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() as Promise<{ min: string | null; max: string | null }> : null))
+      .then((data) => {
+        if (data) setTemporalBounds(data);
+      })
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          setTemporalBounds({ min: null, max: null });
+        }
       });
 
     return () => controller.abort();
@@ -302,16 +335,48 @@ function WelcomeScreen({
               <div className="landing-dossier-row"><span>Coherencia de camino</span><strong>0.84</strong></div>
               <div className="landing-dossier-row"><span>Origen</span><strong>Auditado</strong></div>
             </div>
-            <div className="landing-timeline-card">
-              <div className="landing-timeline-header">
-                <span className="landing-timeline-title">Evidencia temporal</span>
-                <span className="landing-timeline-badge">66% cobertura</span>
+            {temporalBounds && temporalBounds.min && temporalBounds.max ? (
+              <div className="landing-timeline-card">
+                <div className="landing-timeline-header">
+                  <span className="landing-timeline-title">Evidencia temporal</span>
+                  <span className="landing-timeline-badge">{temporalBounds.min.slice(0, 4)} — {temporalBounds.max.slice(0, 4)}</span>
+                </div>
+                <div className="landing-timeline-track" />
+                <div className="landing-timeline-labels">
+                  <span>{temporalBounds.min.slice(0, 4)}</span>
+                  <span>{temporalBounds.max.slice(0, 4)}</span>
+                </div>
               </div>
-              <div className="landing-timeline-track" />
-              <div className="landing-timeline-labels">
-                <span>2030</span>
+            ) : (
+              <div className="landing-quickstart-card">
+                <div className="landing-quickstart-header">
+                  <span className="landing-quickstart-title">Primeros pasos</span>
+                  <span className="landing-quickstart-badge">Onboarding</span>
+                </div>
+                <div className="landing-quickstart-list">
+                  <button className="landing-quickstart-item" type="button" onClick={onOpenNetwork}>
+                    {stats.ready ? <CheckCircle2 size={14} color="var(--ws-green)" /> : <Circle size={14} color="var(--ws-text-dim)" />}
+                    <span>Explorar el grafo de conocimiento</span>
+                  </button>
+                  <button className="landing-quickstart-item" type="button" onClick={onOpenNomenclador}>
+                    <Circle size={14} color="var(--ws-text-dim)" />
+                    <span>Cargar y perfilar una fuente de datos</span>
+                  </button>
+                  <button className="landing-quickstart-item" type="button" onClick={onOpenNomenclador}>
+                    <Circle size={14} color="var(--ws-text-dim)" />
+                    <span>Validar campos contra estándares canónicos</span>
+                  </button>
+                  <button className="landing-quickstart-item" type="button" onClick={onOpenLineage}>
+                    <Circle size={14} color="var(--ws-text-dim)" />
+                    <span>Trazar lineage de un nodo</span>
+                  </button>
+                  <button className="landing-quickstart-item" type="button" onClick={onOpenNomenclador}>
+                    <Circle size={14} color="var(--ws-text-dim)" />
+                    <span>Generar instrumento de captura</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -382,17 +447,41 @@ function WelcomeScreen({
 }
 
 export default function App() {
-  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>('welcome');
+  const [queryClient] = useState(() => new QueryClient());
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceId>(() => {
+    const hash = window.location.hash.slice(1);
+    const valid = ['welcome', 'explore', 'analyze', 'nomenclador', 'ontology', 'vocabulary', 'enrich', 'manage'] as const;
+    return (valid as readonly string[]).includes(hash) ? hash as WorkspaceId : 'welcome';
+  });
   const [exploreView, setExploreView] = useState<ExploreView>('graph');
   const [analyzeView, setAnalyzeView] = useState<AnalyzeView>('reasoning');
+  const [enrichView, setEnrichView] = useState<EnrichView>('entity');
+  const [manageView, setManageView] = useState<ManageView>('overview');
+
+  const switchWorkspace = useCallback((ws: WorkspaceId) => {
+    setActiveWorkspace(ws);
+    window.history.replaceState(null, '', ws === 'welcome' ? '#' : `#${ws}`);
+  }, []);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = window.location.hash.slice(1);
+      const valid = ['welcome', 'explore', 'analyze', 'nomenclador', 'ontology', 'vocabulary', 'enrich', 'manage'] as const;
+      if ((valid as readonly string[]).includes(hash)) {
+        setActiveWorkspace(hash as WorkspaceId);
+      }
+    };
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const navigateToGraph = (_nodeId: string) => {
-    setActiveWorkspace('explore');
+    switchWorkspace('explore');
     setExploreView('graph');
   };
 
   const navigateToConcept = (_conceptName: string) => {
-    setActiveWorkspace('explore');
+    switchWorkspace('explore');
     setExploreView('concepts');
   };
 
@@ -402,26 +491,26 @@ export default function App() {
       return (
         <WelcomeScreen
           onOpenNetwork={() => {
-            setActiveWorkspace('explore');
+            switchWorkspace('explore');
             setExploreView('graph');
           }}
           onOpenVocabulary={() => {
-            setActiveWorkspace('explore');
+            switchWorkspace('explore');
             setExploreView('concepts');
           }}
           onOpenReasoning={() => {
-            setActiveWorkspace('analyze');
+            switchWorkspace('analyze');
             setAnalyzeView('reasoning');
           }}
           onOpenNomenclador={() => {
-            setActiveWorkspace('nomenclador');
+            switchWorkspace('nomenclador');
           }}
           onOpenLineage={() => {
-            setActiveWorkspace('analyze');
+            switchWorkspace('analyze');
             setAnalyzeView('lineage');
           }}
           onOpenSparql={() => {
-            setActiveWorkspace('analyze');
+            switchWorkspace('analyze');
             setAnalyzeView('sparql');
           }}
         />
@@ -462,7 +551,7 @@ export default function App() {
         <WorkspaceShell
           title="Analizar"
           subtitle="Consulta el grafo activo y prueba reglas de inferencia."
-          kicker={analyzeView === 'reasoning' ? 'Motor de Inferencia' : analyzeView === 'sparql' ? 'Consulta SPARQL' : 'Lineage PROV-O'}
+          kicker={analyzeView === 'reasoning' ? 'Motor de Inferencia' : analyzeView === 'sparql' ? 'Consulta SPARQL' : analyzeView === 'lineage' ? 'Lineage PROV-O' : 'Cadena de Decisión'}
           tabs={
             <>
               <button className="workspace-tab" data-active={analyzeView === 'reasoning'} onClick={() => setAnalyzeView('reasoning')}>
@@ -474,12 +563,15 @@ export default function App() {
               <button className="workspace-tab" data-active={analyzeView === 'lineage'} onClick={() => setAnalyzeView('lineage')}>
                 Lineage
               </button>
+              <button className="workspace-tab" data-active={analyzeView === 'decisions'} onClick={() => setAnalyzeView('decisions')}>
+                Decisiones
+              </button>
             </>
           }
         >
           <ErrorBoundary key={`analyze-${analyzeView}`}>
             <Suspense fallback={<WorkspaceFallback />}>
-              {analyzeView === 'reasoning' ? <ReasoningWorkspace /> : analyzeView === 'sparql' ? <SparqlWorkspace /> : <LineageDiagram />}
+              {analyzeView === 'reasoning' ? <ReasoningWorkspace /> : analyzeView === 'sparql' ? <SparqlWorkspace /> : analyzeView === 'lineage' ? <LineageDiagram /> : <DecisionWorkspace />}
             </Suspense>
           </ErrorBoundary>
         </WorkspaceShell>
@@ -502,21 +594,115 @@ export default function App() {
       );
     }
 
+    if (activeWorkspace === 'ontology') {
+      return (
+        <WorkspaceShell
+          title="Ontología"
+          subtitle="Editor, versiones, alineamientos, salud y SHACL."
+          kicker="Gestor de Ontología"
+        >
+          <ErrorBoundary key="ontology">
+            <Suspense fallback={<WorkspaceFallback />}>
+              <OntologyWorkspace onJumpToGraphNode={navigateToGraph} />
+            </Suspense>
+          </ErrorBoundary>
+        </WorkspaceShell>
+      );
+    }
+
+    if (activeWorkspace === 'vocabulary') {
+      return (
+        <WorkspaceShell
+          title="Vocabulario"
+          subtitle="Esquemas SKOS, conceptos y jerarquías."
+          kicker="Navegador de Vocabulario"
+          compact
+        >
+          <ErrorBoundary key="vocabulary">
+            <Suspense fallback={<WorkspaceFallback />}>
+              <VocabularyWorkspace />
+            </Suspense>
+          </ErrorBoundary>
+        </WorkspaceShell>
+      );
+    }
+
+    if (activeWorkspace === 'enrich') {
+      return (
+        <WorkspaceShell
+          title="Enriquecer"
+          subtitle="Resolución de entidades, merge y registro de mutaciones."
+          kicker={enrichView === 'entity' ? 'Resolución de Entidades' : enrichView === 'diffmerge' ? 'Diff & Merge' : 'Registro'}
+          compact
+          tabs={
+            <>
+              <button className="workspace-tab" data-active={enrichView === 'entity'} onClick={() => setEnrichView('entity')}>
+                Entidades
+              </button>
+              <button className="workspace-tab" data-active={enrichView === 'diffmerge'} onClick={() => setEnrichView('diffmerge')}>
+                Diff & Merge
+              </button>
+              <button className="workspace-tab" data-active={enrichView === 'registry'} onClick={() => setEnrichView('registry')}>
+                Registro
+              </button>
+            </>
+          }
+        >
+          <ErrorBoundary key={`enrich-${enrichView}`}>
+            <Suspense fallback={<WorkspaceFallback />}>
+              {enrichView === 'entity' ? <EntityResolutionTab /> : enrichView === 'diffmerge' ? <DiffMergeWorkspace /> : <RegistryTab />}
+            </Suspense>
+          </ErrorBoundary>
+        </WorkspaceShell>
+      );
+    }
+
+    if (activeWorkspace === 'manage') {
+      return (
+        <WorkspaceShell
+          title="Gestión"
+          subtitle="Resumen del knowledge graph, ontología e import/export."
+          kicker={manageView === 'overview' ? 'Resumen del KG' : manageView === 'ontology-summary' ? 'Resumen de Ontología' : 'Import / Export'}
+          compact
+          tabs={
+            <>
+              <button className="workspace-tab" data-active={manageView === 'overview'} onClick={() => setManageView('overview')}>
+                KG Overview
+              </button>
+              <button className="workspace-tab" data-active={manageView === 'ontology-summary'} onClick={() => setManageView('ontology-summary')}>
+                Ontología
+              </button>
+              <button className="workspace-tab" data-active={manageView === 'import-export'} onClick={() => setManageView('import-export')}>
+                Import / Export
+              </button>
+            </>
+          }
+        >
+          <ErrorBoundary key={`manage-${manageView}`}>
+            <Suspense fallback={<WorkspaceFallback />}>
+              {manageView === 'overview' ? <KGOverviewTab /> : manageView === 'ontology-summary' ? <OntologySummaryTab /> : <ImportExportWorkspace />}
+            </Suspense>
+          </ErrorBoundary>
+        </WorkspaceShell>
+      );
+    }
+
     return null;
   };
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="app-shell">
+      <ToastProvider>
+        <div className="app-shell">
         <aside className="app-rail">
-          <button className="brand-pill" title="Explorador de Nomenclador" onClick={() => setActiveWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>NE</button>
+          <button className="brand-pill" title="Explorador de Nomenclador" onClick={() => switchWorkspace('welcome')} style={{ cursor: 'pointer', border: '1px solid rgba(127,208,255,0.18)' }}>NE</button>
           <GlobalSearch onNavigateGraph={navigateToGraph} onNavigateConcept={navigateToConcept} />
           {navItems.map(({ id, label, hint, icon: Icon }) => (
             <button
               key={id}
               className="nav-button"
               data-active={activeWorkspace === id}
-              onClick={() => setActiveWorkspace(id)}
+              onClick={() => switchWorkspace(id)}
               title={hint}
             >
               <Icon size={20} />
@@ -525,7 +711,8 @@ export default function App() {
           ))}
         </aside>
         {renderWorkspace()}
-      </div>
+        </div>
+      </ToastProvider>
     </QueryClientProvider>
   );
 }

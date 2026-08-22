@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Loader2, ArrowRight, AlertTriangle, CheckCircle2, XCircle, HelpCircle, Copy, GitCompare } from "lucide-react";
 
 type Source = { id: string; name: string; label: string };
@@ -77,7 +77,7 @@ export function InteroperabilityTab() {
   const [equivLoading, setEquivLoading] = useState(false);
   const [equivLoaded, setEquivLoaded] = useState(false);
 
-  async function loadSources() {
+  const loadSources = useCallback(async () => {
     if (sourcesLoaded) return;
     try {
       const res = await fetch("/api/nomenclador/sources");
@@ -87,11 +87,9 @@ export function InteroperabilityTab() {
     } catch (e) {
       setError("No se pudieron cargar las fuentes");
     }
-  }
+  }, [sourcesLoaded]);
 
-  loadSources();
-
-  async function loadEquivalences() {
+  const loadEquivalences = useCallback(async () => {
     if (equivLoaded) return;
     setEquivLoading(true);
     try {
@@ -105,7 +103,13 @@ export function InteroperabilityTab() {
     } finally {
       setEquivLoading(false);
     }
-  }
+  }, [equivLoaded]);
+
+  useEffect(() => { void loadSources(); }, [loadSources]);
+
+  useEffect(() => {
+    if (mode === "equivalences") void loadEquivalences();
+  }, [mode, loadEquivalences]);
 
   async function runInterop() {
     if (!sourceDb || !targetDb) return;
@@ -131,8 +135,8 @@ export function InteroperabilityTab() {
       } else {
         setInterop(data);
       }
-    } catch (e: any) {
-      setError(e.message || "Error de conexión");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error de conexión");
     } finally {
       setLoading(false);
     }
@@ -159,8 +163,8 @@ export function InteroperabilityTab() {
       } else {
         setTransform(data);
       }
-    } catch (e: any) {
-      setError(e.message || "Error de conexión");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error de conexión");
     } finally {
       setLoadingTransform(false);
     }
@@ -181,7 +185,7 @@ export function InteroperabilityTab() {
           Comparar fuentes
         </button>
         <button
-          onClick={() => { setMode("equivalences"); void loadEquivalences(); }}
+          onClick={() => setMode("equivalences")}
           style={{
             padding: "8px 16px", border: "none", cursor: "pointer", fontSize: "13px", fontWeight: 600,
             background: mode === "equivalences" ? "var(--ws-accent-soft)" : "var(--ws-surface)",

@@ -40,8 +40,8 @@ export function ValidatorTab() {
       }
       const data = await res.json();
       setResult(data);
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Error en la validación");
     } finally {
       setLoading(false);
     }

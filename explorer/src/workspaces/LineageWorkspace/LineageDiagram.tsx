@@ -52,17 +52,15 @@ export function LineageDiagram() {
     document.body.removeChild(anchor);
   };
 
-  const [prevActiveId, setPrevActiveId] = useState(activeId);
-  if (activeId !== prevActiveId) {
-    setPrevActiveId(activeId);
-    setError("");
-    setNodes([]);
-    setEdges([]);
-  }
-
   useEffect(() => {
+    if (!activeId) {
+      setNodes([]);
+      setEdges([]);
+      setError("");
+      return;
+    }
+
     let ignore = false;
-    if (!activeId) return;
 
     const xLanes = [
       { id: "group_agent", type: "group", position: { x: 50, y: 50 }, style: { width: 800, height: 120 } },
