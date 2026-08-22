@@ -11,8 +11,8 @@ export interface TimelinePanelProps {
   maxDate?: string;
 }
 
-const DEFAULT_MIN_DATE = new Date("1970-01-01T00:00:00Z");
-const DEFAULT_MAX_DATE = new Date("2030-01-01T00:00:00Z");
+const DEFAULT_MIN_DATE = new Date("2020-01-01T00:00:00");
+const DEFAULT_MAX_DATE = new Date("2030-01-01T00:00:00");
 const PLAYHEAD_ID = "playhead";
 const PLAY_INTERVAL_MS = 500;
 const PLAY_STEP_MONTHS = 6;
@@ -188,7 +188,7 @@ export function TimelinePanel({ onTimeChange, minDate, maxDate }: TimelinePanelP
       </div>
 
       <div style={{ position: "absolute", top: 5, left: 100, fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", color: GRAPH_THEME.ui.text.subtle, textTransform: "uppercase", pointerEvents: "none", zIndex: 2 }}>
-        Temporal Scrubber · {minBound.getFullYear()}-{maxBound.getFullYear()}
+        {minDate && maxDate ? `Temporal Scrubber · ${minBound.getFullYear()}-${maxBound.getFullYear()}` : 'Temporal Scrubber · Sin datos temporales'}
       </div>
 
       <div className="sem-timeline-wrap" style={{ flex: 1, overflow: "hidden", position: "relative" }}>

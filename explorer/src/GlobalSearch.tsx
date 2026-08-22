@@ -29,8 +29,10 @@ export function GlobalSearch({ onNavigateGraph, onNavigateConcept }: GlobalSearc
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) {
@@ -73,39 +75,64 @@ export function GlobalSearch({ onNavigateGraph, onNavigateConcept }: GlobalSearc
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
+        setExpanded(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (expanded && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [expanded]);
+
   const hasResults = results && (results.graph.length > 0 || results.concepts.length > 0);
 
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "6px 10px", borderRadius: 8,
-        background: "rgba(0,0,0,0.25)", border: "1px solid var(--ws-border)",
-      }}>
-        <Search size={14} color="var(--ws-text-dim)" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-          onFocus={() => setOpen(true)}
-          placeholder="Buscar en grafo y conceptos…"
+      {/* Collapsed: icon button. Expanded: full input. */}
+      {expanded ? (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "6px 10px", borderRadius: 8,
+          background: "rgba(0,0,0,0.25)", border: "1px solid var(--ws-border)",
+        }}>
+          <Search size={14} color="var(--ws-text-dim)" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+            onFocus={() => setOpen(true)}
+            placeholder="Buscar…"
+            style={{
+              flex: 1, background: "none", border: "none", outline: "none",
+              color: "var(--ws-text)", fontSize: 12, fontFamily: "inherit", minWidth: 0,
+            }}
+          />
+          {loading && <Loader2 size={12} className="animate-spin" color="var(--ws-text-dim)" />}
+        </div>
+      ) : (
+        <button
+          onClick={() => setExpanded(true)}
+          title="Buscar en grafo y conceptos"
           style={{
-            flex: 1, background: "none", border: "none", outline: "none",
-            color: "var(--ws-text)", fontSize: 12, fontFamily: "inherit",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: "100%", padding: "8px", borderRadius: 8,
+            background: "rgba(0,0,0,0.25)", border: "1px solid var(--ws-border)",
+            cursor: "pointer", color: "var(--ws-text-dim)",
           }}
-        />
-        {loading && <Loader2 size={12} className="animate-spin" color="var(--ws-text-dim)" />}
-      </div>
+        >
+          <Search size={16} />
+        </button>
+      )}
 
       {open && query.trim().length >= 2 && (
         <div style={{
-          position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0,
+          position: "absolute", top: "calc(100% + 4px)", left: 0,
+          width: 320,
           zIndex: 100, borderRadius: 10, overflow: "hidden",
           background: "var(--ws-bg-elevated, #161b22)", border: "1px solid var(--ws-border)",
           boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
@@ -136,7 +163,7 @@ export function GlobalSearch({ onNavigateGraph, onNavigateConcept }: GlobalSearc
                   {results!.concepts.map((c) => (
                     <button
                       key={c.id}
-                      onClick={() => { onNavigateConcept(c.name); setOpen(false); setQuery(""); }}
+                      onClick={() => { onNavigateConcept(c.name); setOpen(false); setExpanded(false); setQuery(""); }}
                       style={{
                         display: "flex", alignItems: "center", gap: 8, width: "100%",
                         padding: "8px 12px", cursor: "pointer",
@@ -169,7 +196,7 @@ export function GlobalSearch({ onNavigateGraph, onNavigateConcept }: GlobalSearc
                   {results!.graph.map((g) => (
                     <button
                       key={g.node.id}
-                      onClick={() => { onNavigateGraph(g.node.id); setOpen(false); setQuery(""); }}
+                      onClick={() => { onNavigateGraph(g.node.id); setOpen(false); setExpanded(false); setQuery(""); }}
                       style={{
                         display: "flex", alignItems: "center", gap: 8, width: "100%",
                         padding: "8px 12px", cursor: "pointer",
